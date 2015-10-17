@@ -1,0 +1,56 @@
+.multipics { /* holder element for multiple pictures */
+  width: 100%;
+  height: 560px;
+}
+
+.leftcol { /* left column of multipics */
+  float: left;
+}
+
+.rightcol { /* right column of multipics */
+  float: right;
+}
+
+.leftcol, .rightcol {
+  width: 49%;
+  height: 100%;
+}
+
+.innertable { /* table holder for centering purposes */
+  display: table;
+  width: 100%;
+}
+
+.single img {
+  /* height: 100%; */
+  max-width: 100%;
+}
+
+.elm-1 .innertable {
+  height: 100%;
+}
+
+.elm-2 .innertable {
+  height: 49%;
+}
+
+[class~="elm-2"][class~="leftcol"] .innertable {
+  margin-left: 20%;
+  width: 80%;
+}
+
+[class~="elm-2"][class~="rightcol"] .innertable {
+  margin-right: 20%;
+  width: 80%;
+}
+
+.tablecell {
+  display: table-cell;
+  vertical-align: middle;
+  width: 100%;
+}
+
+.innertable .tablecell img {
+  max-width: 100%;
+  max-height: 100%;
+}

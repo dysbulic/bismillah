@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="ISO-8859-1" standalone="no" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+ "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+  <head>
+    <title>Music Timer</title>
+    <style type="text/css">
+      body {
+        font-size: 13pt;
+      }
+      #mp3_player {
+        display: inline;
+        width: 95%;
+        height: 15px;
+        border: thin solid gray;
+      }
+    </style>
+    <script type="text/javascript">
+      var display;
+      var lastTime;
+      var startTime;
+      function setup() {
+        display = document.createElement("div");
+        var body = document.getElementsByTagName("body").item(0);
+        body.appendChild(display);
+        document.onkeydown = onKeydown;
+      }
+
+      function seek(time) {
+        var currentTime = new Date().getTime();
+        document.getElementById("mp3_player").SetVariable("seekOffset", time);
+        startTime = currentTime - time;
+        lastTime = time;
+      }
+        
+      function start() {
+        document.getElementById("mp3_player").SetVariable("playing", "false");
+        document.getElementById("mp3_player").SetVariable("playing", "true");
+        lastTime = startTime = new Date().getTime();
+      }
+
+      function onKeydown(event) {
+        var currentTime = new Date().getTime();
+        var offset = currentTime - startTime;
+        display.appendChild(document.createElement("div"));
+        display.lastChild.appendChild(document.createTextNode
+          (offset + ": " + (currentTime - lastTime)));
+        display.lastChild.appendChild(document.createElement("a"))
+        display.lastChild.lastChild.setAttribute
+          ("href", "javascript:seek(" + offset + ")");
+        display.lastChild.lastChild.appendChild
+          (document.createTextNode("Seek to " + offset));
+        lastTime = currentTime;
+      }
+    </script>
+  </head>
+  <body onload="setup()">
+    <div id="music">
+      <object id="mp3_player" type="application/x-shockwave-flash" data="Player.swf">
+        <param name="FlashVars" value="song=Black Eyed Peas - Let's Get Retarded.mp3"></param>
+      </object>
+    </div>
+    <p>This allows testing of the timing for a song. On each key press, the time since the beginning of the recording is shown as well as the delay since the last keypress.</p>
+    <div style="text-align: center"><a href="javascript:start()">Start</a></div>
+  </body>
+</html>

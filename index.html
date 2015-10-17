@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+ "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+  <head>
+    <title>PC-RIM 2003 Volunteer Spectacular</title>
+    <link rel="stylesheet" type="text/css" href="main.css" />
+    <link rel="stylesheet" type="text/css" href="table.css" />
+    <link rel="stylesheet" type="text/css" href="customlayout.css" />
+    <style type="text/css">
+    </style>
+    <script type="text/javascript" src="compatability.js"></script>
+    <script type="text/javascript" src="Slideshow.js"></script>
+    <script type="text/javascript" src="UIInterface.js"></script>
+    <script type="text/javascript" src="control.js"></script>
+    <script type="text/javascript">
+    </script>
+  </head>
+<!--  <body onload="setup('bismillah.sml', 'pictureholder', 'slider', 'mp3_player');"> -->
+  <body onload="setup('bismillah.xml', 'pictureholder', 'slider', 'mp3_player');">
+    <div id="scrollbar">
+      <div id="slider"></div>
+    </div>
+    <div id="display">
+      <div id="pictures"><div id="pictureholder"></div></div>
+      <div id="music">
+        <object id="mp3_player" type="application/x-shockwave-flash" data="Player.swf">
+          <param name="FlashVars" value="backgroundColor=0x000000"></param>
+          <param name="FlashVars" value="fontColor=0xEEEEEE"></param>
+          <param name="FlashVars" value="color=0xEEEEEE"></param>
+          <param name="FlashVars" value="linePercentage=10"></param>
+        </object>
+      </div>
+    </div>
+  </body>
+</html>

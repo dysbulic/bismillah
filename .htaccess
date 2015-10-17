@@ -1,0 +1,9 @@
+AddCharset UTF-8 .html .php .sml
+AddType text/xml .sml
+
+<FilesMatch "Black Eyed Peas - Let's Get Retarded.mp3">
+  AuthUserFile /home/will/sites/.htpasswd
+  AuthName "slideshow pass: username = slideshow / no password"
+  AuthType Basic
+#  Require valid-user
+</FilesMatch>
