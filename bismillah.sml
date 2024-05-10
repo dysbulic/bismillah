@@ -1,4 +1,4 @@
-<slideshow backgroundMusic="Black Eyed Peas - Let's Get Retarded.mp3"
+<slideshow backgroundMusic="Black Eyed Peas - Let's Get Retarded.m4a"
            defaultDuration="1200">
   <!-- This is a list of millisecond values representing appropriate
      -  transitions in the song for changing slides

@@ -9,28 +9,29 @@
     <link rel="stylesheet" type="text/css" href="customlayout.css" />
     <style type="text/css">
     </style>
-    <script type="text/javascript" src="compatability.js"></script>
-    <script type="text/javascript" src="Slideshow.js"></script>
-    <script type="text/javascript" src="UIInterface.js"></script>
-    <script type="text/javascript" src="control.js"></script>
-    <script type="text/javascript">
+    <!--
+      <script type="text/javascript" src="compatability.js"></script>
+      <script type="text/javascript" src="Slideshow.js"></script>
+      <script type="text/javascript" src="UIInterface.js"></script>
+    -->
+    <script type="module">
+      import { setup } from './control.js'
+      document.addEventListener('DOMContentLoaded', () => {
+        setup('bismillah.xml', 'holder', 'slider', 'player')
+      })
     </script>
   </head>
-<!--  <body onload="setup('bismillah.sml', 'pictureholder', 'slider', 'mp3_player');"> -->
-  <body onload="setup('bismillah.xml', 'pictureholder', 'slider', 'mp3_player');">
-    <div id="scrollbar">
-      <div id="slider"></div>
-    </div>
-    <div id="display">
-      <div id="pictures"><div id="pictureholder"></div></div>
-      <div id="music">
-        <object id="mp3_player" type="application/x-shockwave-flash" data="Player.swf">
-          <param name="FlashVars" value="backgroundColor=0x000000"></param>
-          <param name="FlashVars" value="fontColor=0xEEEEEE"></param>
-          <param name="FlashVars" value="color=0xEEEEEE"></param>
-          <param name="FlashVars" value="linePercentage=10"></param>
-        </object>
-      </div>
-    </div>
+  <body>
+    <aside id="scrollbar">
+      <section id="slider"></section>
+    </aside>
+    <main id="display">
+      <section id="pictures"><div id="holder"></div></section>
+      <section id="music">
+        <audio id="player">
+          <source href="Black Eyed Peas - Let's Get Retarded.m4a"/>
+        </audio>
+      </section>
+    </main>
   </body>
 </html>

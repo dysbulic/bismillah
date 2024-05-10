@@ -1,4 +1,4 @@
-<slideshow backgroundMusic="Black Eyed Peas - Let's Get Retarded.mp3"
+<slideshow backgroundMusic="Black Eyed Peas - Let's Get Retarded.m4a"
            defaultDuration="1200">
   <!-- This is a list of millisecond values representing appropriate
      -  transitions in the song for changing slides
@@ -333,83 +333,87 @@
        - DisplayEvents.
       -->
     <loader type="text/javascript"><![CDATA[
-function layoutMugshots(slide, holder) {
-  var events = new Array();
-  holder.className = "customlayout";
+// import { setStyleProperty } from './compatability.js'
+// import { DisplayEvent } from './Slideshow.js'
 
-  var duration = slide.endTime - slide.startTime;
-  var startDelay = duration * .1;
+export function layout(slide, holder) {
+  var events = new Array()
+  holder.className = "customlayout"
+
+  var duration = slide.endTime - slide.startTime
+  var startDelay = duration * .1
   // pics regularly for the first 2/3 of the slide's display
-  var picDelay = Math.round((2 * (duration - startDelay) / 3) / slide.length);
+  var picDelay = Math.round((2 * (duration - startDelay) / 3) / slide.length)
 
-  var orderIndexes = new Array();
-  var picIndexes = new Array();
+  var orderIndexes = new Array()
+  var picIndexes = new Array()
   for(var i = slide.length - 1; i >= 0; i--) {
-    orderIndexes.push(i + 1);
-    picIndexes.push(i);
+    orderIndexes.push(i + 1)
+    picIndexes.push(i)
   }
-  orderIndexes.randomize();
-  picIndexes.randomize();
+  orderIndexes.randomize()
+  picIndexes.randomize()
 
-  var topCount = 12;
-  var sideCount = 6;
+  var topCount = 12
+  var sideCount = 6
 
   for(var i = 0; i < slide.length; i++) {
-    var info = slide[i];
-    var index = orderIndexes[i];
-    info.element = document.createElement("div");
-    info.element.className = "customelm";
-    info.element.appendChild(slide[picIndexes[i]].image);
+    var info = slide[i]
+    var index = orderIndexes[i]
+    info.element = document.createElement("div")
+    info.element.className = "customelm"
+    info.element.appendChild(slide[picIndexes[i]].image)
 
-    var allSideCount = 2 * topCount + 2 * (sideCount - 2);
-    var leftBorder = (topCount % 2 == 0 ? 1.5 : 2);
-    var topBorder = (sideCount % 2 == 0 ? 1.5 : 2);
+    var allSideCount = 2 * topCount + 2 * (sideCount - 2)
+    var leftBorder = (topCount % 2 == 0 ? 1.5 : 2)
+    var topBorder = (sideCount % 2 == 0 ? 1.5 : 2)
     if(index >= 1 && index <= topCount) { // top row
-      var offset = index;
-      setStyleProperty(info.element, "left", (((offset - 1) / topCount) * 100) + "%");
-      setStyleProperty(info.element, "top", "0%");
+      var offset = index
+      setStyleProperty(info.element, "left", (((offset - 1) / topCount) * 100) + "%")
+      setStyleProperty(info.element, "top", "0%")
     } else if(index > topCount && index <= topCount + sideCount - 2) { // left side
-      var offset = index - topCount;
-      setStyleProperty(info.element, "left", "0%");
-      setStyleProperty(info.element, "top", ((offset / sideCount) * 100) + "%");
+      var offset = index - topCount
+      setStyleProperty(info.element, "left", "0%")
+      setStyleProperty(info.element, "top", ((offset / sideCount) * 100) + "%")
     } else if(index > topCount + sideCount - 2 && index <= topCount + 2 * (sideCount - 2)) { // right side
-      var offset = index - (topCount + sideCount - 2);
-      setStyleProperty(info.element, "left", (((topCount - 1) / topCount) * 100) + "%");
-      setStyleProperty(info.element, "top", ((offset / sideCount) * 100) + "%");
+      var offset = index - (topCount + sideCount - 2)
+      setStyleProperty(info.element, "left", (((topCount - 1) / topCount) * 100) + "%")
+      setStyleProperty(info.element, "top", ((offset / sideCount) * 100) + "%")
     } else if(index > topCount + 2 * (sideCount - 2) && index <= allSideCount) { // bottom row
-      var offset = index - (topCount + 2 * (sideCount - 2));
-      setStyleProperty(info.element, "left", (((offset - 1) / topCount) * 100) + "%");
-      setStyleProperty(info.element, "top",  (((sideCount - 1) / sideCount) * 100) +  "%");
+      var offset = index - (topCount + 2 * (sideCount - 2))
+      setStyleProperty(info.element, "left", (((offset - 1) / topCount) * 100) + "%")
+      setStyleProperty(info.element, "top",  (((sideCount - 1) / sideCount) * 100) +  "%")
     } else {
-      var offset = index - allSideCount;
-      var rowOffset = topBorder;
+      var offset = index - allSideCount
+      var rowOffset = topBorder
       if(offset >= 1 && offset <= Math.ceil((topCount - 2 * leftBorder - 2) / 2)) {
-        setStyleProperty(info.element, "left", (((1 + leftBorder + 2 * (offset - 1)) / topCount) * 100) + "%");
+        setStyleProperty(info.element, "left", (((1 + leftBorder + 2 * (offset - 1)) / topCount) * 100) + "%")
       } else if(offset > Math.ceil((topCount - 2 * leftBorder - 2) / 2) &&
                 offset <= topCount - 2 * leftBorder - 1) {
-        offset -= Math.ceil((topCount - 2 * leftBorder - 2) / 2);
+        offset -= Math.ceil((topCount - 2 * leftBorder - 2) / 2)
         if(offset / Math.ceil((topCount - 2 * leftBorder) / 2) > .5) {
-          offset++;
+          offset++
         }
-        setStyleProperty(info.element, "left", (((leftBorder + 2 * (offset - 1)) / topCount) * 100) + "%");
-        rowOffset++;
+        setStyleProperty(info.element, "left", (((leftBorder + 2 * (offset - 1)) / topCount) * 100) + "%")
+        rowOffset++
       } else {
-        offset -= topCount - leftBorder * 2 - 1;
-        setStyleProperty(info.element, "left", (((1 + leftBorder + 2 * (offset - 1)) / topCount) * 100) + "%");
-        rowOffset += 2;
+        offset -= topCount - leftBorder * 2 - 1
+        setStyleProperty(info.element, "left", (((1 + leftBorder + 2 * (offset - 1)) / topCount) * 100) + "%")
+        rowOffset += 2
       }
-      setStyleProperty(info.element, "top",  ((rowOffset * 1 / sideCount) * 100) + "%");  
+      setStyleProperty(info.element, "top",  ((rowOffset * 1 / sideCount) * 100) + "%")
     }
-    setStyleProperty(info.element, "width", (1 / topCount * 100) + "%");
+    setStyleProperty(info.element, "width", (1 / topCount * 100) + "%")
 
     if(nodeIsInDocument(info.element)) {
-      info.element.parentNode.removeChild(info.element);
+      info.element.parentNode.removeChild(info.element)
     }
-    holder.appendChild(info.element);
-    events.push(new DisplayEvent
-                (info, slide.startTime + startDelay + picDelay * (i + 1), slide.endTime));
+    holder.appendChild(info.element)
+    events.push(new DisplayEvent(
+      info, slide.startTime + startDelay + picDelay * (i + 1), slide.endTime,
+    ))
   }
-  return events;
+  return events
 }
     ]]></loader>
   </slide>
