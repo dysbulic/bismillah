@@ -136,7 +136,7 @@ export class Slideshow {
     this.lastSeekTime = time
   }
 
-  load(
+  async load(
     xmlDocument, // DOM configuration
     uiInterface, // object with UI interface functions
   ) {
@@ -144,15 +144,17 @@ export class Slideshow {
     this.backgroundMusic =
       xmlDocument.documentElement.getAttribute('backgroundMusic')
 
-    const finishLayout = function(event) {
+    const finishLayout = function() {
       this.ui.layout(this.slides, this.stopPoints)
     }
     finishLayout.stopPoints = this.extractStopPoints(xmlDocument)
-    finishLayout.slides = this.extractSlides(xmlDocument)
+    finishLayout.slides = await this.extractSlides(xmlDocument)
     finishLayout.ui = this
     this.loaded = true
     addListener(uiInterface, 'load', finishLayout, false)
-    finishLayout.call(finishLayout) // the event could already have fired
+    try {
+      finishLayout.call(finishLayout) // the event could already have fired
+    } catch(err) {}
   }
 
   /**
@@ -160,22 +162,27 @@ export class Slideshow {
    * until all the html is loaded
    */
   layout(slides, stopPoints) {
-    if(!this.configured && uiInterface.loaded && !this.finishingLayout) {
+    if(!uiInterface.loaded) {
+      throw new Error('UI not loaded in `layout`.')
+    }
+    console.debug({ 'Laying Out': { slides, stopPoints } })
+    if(!this.configured && !this.finishingLayout) {
       this.finishingLayout = true
       this.timeSlides(slides, stopPoints)
-      for(const i = 0; i < slides.length; i++) {
-        const slideEvents = uiInterface.layoutSlide(slides[i])
+      for(const slide of Array.from(slides)) {
+        const slideEvents = uiInterface.layoutSlide(slide)
         //this.events = this.events.concat(slideEvents) // Adding a mystery element
         while(slideEvents.length > 0) {
           this.events.push(slideEvents.pop())
         }
       }
-      this.events.sort((a, b) => (a.startTime - b.startTime))
-      for(const i = 0; i < this.events.length; i++) {
+      this.events.sort((a, b) => (b.startTime - a.startTime))
+      for(const event of this.events) {
         this.presentationTime = Math.max(
-          this.presentationTime, this.events[i].endTime,
+          this.presentationTime, event.endTime,
         )
       }
+      console.debug({ ev: this.events })
       this.configured = true
       this.finishingLayout = undefined
 
@@ -202,9 +209,12 @@ export class Slideshow {
       if(startTime != null) {
         if(startTime === 'none') {
           // start time will be handled by the loader
-        } else if(startTime.contains('+')) { // relative offset
+        } else if(
+          typeof(startTime) === 'string'
+          && startTime.includes('+')
+        ) { // relative offset
           const offset = (
-            parseInt(startTime.substring(startTime.indexOf('+') + 1))
+            Number(startTime.substring(startTime.indexOf('+') + 1))
           )
           // The first slide cannot have a relative offset
           if(currentStopIndex < 0) {
@@ -233,10 +243,10 @@ export class Slideshow {
       }
     }
 
-    for(const slideIndex = 0; slideIndex < slides.length; slideIndex++) {
+    for(let slideIndex = 0; slideIndex < slides.length; slideIndex++) {
       const slide = slides[slideIndex]
       setSlideStartTime(slide)
-      for(const elementIndex = 0; elementIndex < slide.length; elementIndex++) {
+      for(let elementIndex = 0; elementIndex < slide.length; elementIndex++) {
         const element = slide[elementIndex]
         /* The first element should display as the slide opens
         *  unless it has an explicit offset specified
@@ -248,26 +258,27 @@ export class Slideshow {
         }
         if(slide.type == 'html') {
           const { timings } = element
-          for(const i = 0; i < timings.length; i++) {
-            setSlideStartTime(timings[i], timings[i].startTime)
+          for(const timing of timings) {
+            setSlideStartTime(timing, timing.startTime)
           }
         }
       }
-      const endTime = stopPoints[currentStopIndex + 1]
+      let endTime = stopPoints[currentStopIndex + 1]
       if(slide.duration != null) {
         endTime = slide.startTime + Number(slide.duration)
       }
       slide.endTime = endTime
-      for(const elementIndex = 0; elementIndex < slide.length; elementIndex++) {
-        slide[elementIndex].endTime = endTime
-      }
-      if(slide.type == 'html') {
-        const { timings } = element
-        for(const i = 0; i < timings.length; i++) {
-          if(!timings[i].element) {
-            console.error(`No timing on: ${timings[i].element}`)
+      for(const element of slide) {
+        element.endTime = endTime
+
+        if(slide.type == 'html') {
+          const { timings } = element
+          for(const timing of timings) {
+            if(!timing.element) {
+              console.error(`No timing on: ${timing.element}`)
+            }
+            timing.endTime = endTime
           }
-          timings[i].endTime = endTime
         }
       }
     }
@@ -387,22 +398,19 @@ export class Slideshow {
   }
 
   addEventListener(type, listener, bubble) {
-    if(type === 'configure') {
-      this.configureListeners ??= new Array()
-      this.configureListeners.push(listener)
-    } else {
-      console.error(`Unknown Event Type: "${type}".`)
+    if(type !== 'configure') {
+      throw new Error(`Unknown Event Type: "${type}".`)
     }
+    this.configureListeners ??= new Array()
+    this.configureListeners.push(listener)
   }
 
   dispatchEvent(event) {
-    if(
-      event.type === 'configure'
-      && this.configureListeners != null
-    ) {
-      for(const listener of this.configureListeners) {
-        listener.call(listener, event)
-      }
+    if(event.type !== 'configure') {
+      throw new Error(`Unknown Event Type: "${event.type}".`)
+    }
+    for(const listener of this.configureListeners ?? []) {
+      listener.call(listener, event)
     }
   }
 

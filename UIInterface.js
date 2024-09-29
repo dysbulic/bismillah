@@ -1,7 +1,7 @@
 import {
   setStyleProperty, addListener,
-  loadXMLDocument, selectNodes,
-  createEvent, nodeIsInDocument,
+  loadXMLDocument, createEvent,
+  nodeIsInDocument,
 } from './compatability.js'
 import { DisplayEvent } from './Slideshow.js'
 import { slideshow, uiInterface } from './control.js'
@@ -16,8 +16,8 @@ export class UIInterface {
     container.tempImageHolder.className = 'tablecell'
     container.appendChild(container.tempImageHolder)
 
-    this.removeElements = true; // either removeChild or display='none' elements on hide
-    this._unloadedObjects = 0;    // number of images requested, but not uploaded
+    this.removeElements = true; // either removeChild or set display='none' on hide
+    this._unloadedObjects = 0; // number of images requested, but not uploaded
     this.loaded = false
     this.loadingStyle = {}
     this.loadingStyle.border = '2px solid red'
@@ -202,7 +202,8 @@ export class UIInterface {
 
   decrementObjectCount() {
     this._unloadedObjects--
-    if(this._unloadedObjects == 0 && slideshow.loaded) { // config is parsed
+    console.debug({ count: this._unloadedObjects, loaded: slideshow.loaded })
+    if(this._unloadedObjects === 0 && slideshow.loaded) { // config is parsed
       this.loaded = true
       const event = createEvent('Events')
       event.initEvent('load', true, true); //true for can bubble, true for cancelable
@@ -214,15 +215,15 @@ export class UIInterface {
     if(nodeIsInDocument(this.container.tempImageHolder)) {
       this.container.removeChild(this.container.tempImageHolder)
     }
-    const events = new Array()
+    let events = new Array()
     if(slide.length > 0) {
       const element = document.createElement('div')
       if(slide.loader) {
         events = slide.loader.call(this, slide, element)
       } else  if(slide.type == 'html') {
-        for(const i = 0; i < slide.length; i++) {
+        for(let i = 0; i < slide.length; i++) {
           element.className = 'tablecell single'
-          events = this.layoutHTML(slide, element)
+          events = this.layoutHTML(slide[i], element)
         }
       } else { // image slide, no mixed mode slides at this point
         const customLayout = slide[0].style != null
@@ -273,8 +274,7 @@ export class UIInterface {
   layoutCustomImages(slide, holder) {
     const events = new Array()
     holder.className = 'customlayout'
-    for(const i = 0; i < slide.length; i++) {
-      const info = slide[i]
+    for(const info of slide) {
       info.element = document.createElement('div')
       info.element.className = 'customelm'
       try {
@@ -284,17 +284,17 @@ export class UIInterface {
           `Couldn’t add custom image holder: ${e.message}`
         )
       }
-      if(typeof(slide[i].style) !== 'undefined') {
-        for(const prop in slide[i].style) {
-          setStyleProperty(info.element, prop, slide[i].style[prop])
+      if(info.style != null) {
+        for(const prop in info.style) {
+          setStyleProperty(info.element, prop, info.style[prop])
         }
       }
-      if(nodeIsInDocument(slide[i].image)) {
-        slide[i].image.parentNode.removeChild(slide[i].image)
+      if(nodeIsInDocument(info.image)) {
+        info.image.parentNode.removeChild(info.image)
       }
-      info.element.appendChild(slide[i].image)
+      info.element.appendChild(info.image)
       events.push(new DisplayEvent(
-        info, slide[i].startTime, slide[i].endTime,
+        info, info.startTime, info.endTime,
       ))
     }
     return events
@@ -308,7 +308,7 @@ export class UIInterface {
     holder.className = 'multipics'
     let col = undefined
     const switchIndex = Math.floor(slide.length / 2)
-    for(const index = 0; index < slide.length; index++) {
+    for(let index = 0; index < slide.length; index++) {
       const info = slide[index]
       if(index === 0 || index === switchIndex) {
         col = document.createElement('div')
@@ -346,12 +346,12 @@ export class UIInterface {
 
   layoutHTML(slide, holder) {
     const events = new Array()
-    for(const i = 0; i < slide.length; i++) {
+    for(let i = 0; i < slide.length; i++) {
       holder.appendChild(slide[i].element)
       events.push(new DisplayEvent(
         slide[i], slide.startTime, slide.endTime,
       ))
-      for(const j = 0; j < slide[i].timings.length; j++) {
+      for(let j = 0; j < slide[i].timings.length; j++) {
         const timing = slide[i].timings[j]
         events.push(new DisplayEvent(
           timing, timing.startTime, timing.endTime,
@@ -361,15 +361,21 @@ export class UIInterface {
     return events
   }
 
-  addEventListener(event, listener, bubble) {
-    if(event === 'load') {
-      this.loadListeners ??= new Array()
-      this.loadListeners.push(listener)
+  addEventListener(type, listener, bubble) {
+    if(type !== 'load') {
+      throw new Error(`Unknown Event Type: "${type}".`)
     }
+    this.loadListeners ??= new Array()
+    this.loadListeners.push(listener)
   }
 
   dispatchEvent(event) {
-    if(event.type == 'load' && this.loadListeners) {
+    if(event.type !== 'load') {
+      throw new Error(`Unknown Event Type: "${event.type}".`)
+    }
+    if(!this.loadListeners) {
+      console.debug('No `load` listeners.')
+    } else {
       for(const listener of this.loadListeners) {
         listener.call(listener, event)
       }

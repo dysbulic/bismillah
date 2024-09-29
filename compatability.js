@@ -243,7 +243,7 @@ export function copyTo(holder, contents) {
 
 /* Randomizes the elements of an array */
 Array.prototype.randomize = function performFisherYates() {
-  const i = this.length
+  let i = this.length
   if(i > 0) {
     while(--i > 0) {
       const j = Math.floor(Math.random() * (i + 1))

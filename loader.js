@@ -1,3 +1,9 @@
+import {
+  setStyleProperty, nodeIsInDocument,
+} from './compatability.js'
+import { DisplayEvent } from './Slideshow.js'
+
+
 export default function layout(slide, holder) {
   const events = new Array()
   holder.className = 'customlayout'
@@ -11,7 +17,7 @@ export default function layout(slide, holder) {
 
   const orderIndexes = new Array()
   const picIndexes = new Array()
-  for(const i = slide.length - 1; i >= 0; i--) {
+  for(let i = slide.length - 1; i >= 0; i--) {
     orderIndexes.push(i + 1)
     picIndexes.push(i)
   }
@@ -21,7 +27,7 @@ export default function layout(slide, holder) {
   const topCount = 12
   const sideCount = 6
 
-  for(const i = 0; i < slide.length; i++) {
+  for(let i = 0; i < slide.length; i++) {
     const info = slide[i]
     const index = orderIndexes[i]
     info.element = document.createElement('div')
@@ -49,8 +55,8 @@ export default function layout(slide, holder) {
       left = `${((offset - 1) / topCount) * 100}%`
       top = `${((sideCount - 1) / sideCount) * 100}%`
     } else {
-      const offset = index - allSideCount
-      const rowOffset = topBorder
+      let offset = index - allSideCount
+      let rowOffset = topBorder
       if(offset >= 1 && offset <= Math.ceil((topCount - 2 * leftBorder - 2) / 2)) {
         left = `${((1 + leftBorder + 2 * (offset - 1)) / topCount) * 100}%`
       } else if(
