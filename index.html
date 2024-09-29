@@ -1,19 +1,11 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
- "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
   <head>
     <title>PC-RIM 2003 Volunteer Spectacular</title>
-    <link rel="stylesheet" type="text/css" href="main.css" />
-    <link rel="stylesheet" type="text/css" href="table.css" />
-    <link rel="stylesheet" type="text/css" href="customlayout.css" />
-    <style type="text/css">
-    </style>
-    <!--
-      <script type="text/javascript" src="compatability.js"></script>
-      <script type="text/javascript" src="Slideshow.js"></script>
-      <script type="text/javascript" src="UIInterface.js"></script>
-    -->
+    <link rel="stylesheet" type="text/css" href="main.css"/>
+    <link rel="stylesheet" type="text/css" href="table.css"/>
+    <link rel="stylesheet" type="text/css" href="customlayout.css"/>
+    <link rel="shortcut icon" href="Peace Corps swoosh.svg"/>
     <script type="module">
       import { setup } from './control.js'
       document.addEventListener('DOMContentLoaded', () => {
@@ -28,8 +20,8 @@
     <main id="display">
       <section id="pictures"><div id="holder"></div></section>
       <section id="music">
-        <audio id="player">
-          <source href="Black Eyed Peas - Let's Get Retarded.m4a"/>
+        <audio id="player" controls>
+          <source src="Black Eyed Peas - Let's Get Retarded.m4a"/>
         </audio>
       </section>
     </main>

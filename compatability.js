@@ -1,9 +1,6 @@
-// @ts-nocheck
 /* Compatability layer to get scripts to work on
  *  more than just mozilla.
  */
-
-export const __WJH_COMPAT_LIB = true
 
 // From: http://www.w3.org/TR/2000/REC-DOM-Level-2-Core-20001113/ecma-script-binding.html
 if(!globalThis.Node) {
@@ -84,7 +81,7 @@ export function removeListener(element, event, listener, bubble) {
   }
 }
 
-export var stylesheetAlerted = false
+export const stylesheetAlerted = false
 
 /**
  * Add a new rule to the last stylesheet
@@ -95,7 +92,7 @@ export function addStylesheetRule(selector, declarations, stylesheet) {
     stylesheet = document.styleSheets[document.styleSheets.length - 1]
   }
   if(typeof(stylesheet) != "undefined") {
-    var rules = undefined
+    const rules = undefined
     if(typeof(stylesheet.cssRules) != "undefined") {
       rules = stylesheet.cssRules
     } else if(typeof(stylesheet.rules) != "undefined") {
@@ -119,7 +116,7 @@ export function addStylesheetRule(selector, declarations, stylesheet) {
  */
 export function addOption(text, parent) {
   if(text.length > 0) {
-    var option = document.createElement("option")
+    const option = document.createElement("option")
     option.appendChild(document.createTextNode(text))
     parent.appendChild(option)
   }
@@ -129,12 +126,12 @@ export function createEvent(type, useBuiltIn) {
   if(typeof(document.createEvent) != "undefined" && useBuiltIn != false) {
     return document.createEvent.apply(document, arguments)
   } else {
-    var event = new Object()
+    const event = new Object()
     event["init" + type.substring(0, type.length - 1)] = function() {
-      for(var i = 0; i < arguments.length && i < this.argNames.length; i++)
+      for(const i = 0; i < arguments.length && i < this.argNames.length; i++)
         this[this.argNames[i]] = arguments[i]
     }
-    var baseArgs = new Array("type", "bubbles", "cancelable")
+    const baseArgs = new Array("type", "bubbles", "cancelable")
     switch(type) {
       case "UIEvents":
         event.argNames = baseArgs.concat(new Array("view", "detail"))
@@ -201,13 +198,13 @@ export function getForm(submission) {
  * Print in dialogs the properties an object has
  */
 export function printProperties(element, skipConstants) {
-  var lists = new Array()
+  const lists = new Array()
   for(let property in element) {
     if(skipConstants && property.match(/^[A-Z_0-9]*$/)) continue
 
-    var name = "element." + property
-    var value = element[property]
-    var type = typeof(value)
+    const name = "element." + property
+    const value = element[property]
+    const type = typeof(value)
 
     if(!lists[type]) {
       lists[type] = type + "s:"
@@ -239,19 +236,19 @@ export function clearNode(node) {
  * Append the elements in an array to an element
  */
 export function copyTo(holder, contents) {
-  for(var i = 0; i < contents.length; i++) {
+  for(const i = 0; i < contents.length; i++) {
     holder.appendChild(contents[i])
   }
 }
 
 /* Randomizes the elements of an array */
 Array.prototype.randomize = function performFisherYates() {
-  var i = this.length
+  const i = this.length
   if(i > 0) {
     while(--i > 0) {
-      var j = Math.floor(Math.random() * (i + 1))
-      var tempi = this[i]
-      var tempj = this[j]
+      const j = Math.floor(Math.random() * (i + 1))
+      const tempi = this[i]
+      const tempj = this[j]
       this[i] = tempj
       this[j] = tempi
     }
@@ -298,18 +295,20 @@ export function setOpacity(element, opacity) {
 }
 
 export function getXMLHttpRequest(callback) {
-  var request
-  if(typeof(XMLHttpRequest) != "undefined") {
+  let request
+  if(typeof(XMLHttpRequest) !== "undefined") {
     request = new XMLHttpRequest()
   } else if(window.ActiveXObject) {
-    var msxmlProgids = new Array("MSXML2.XMLHTTP.5.0",
-                                 "MSXML2.XMLHTTP.4.0",
-                                 "MSXML2.XMLHTTP.3.0",
-                                 "MSXML2.XMLHTTP",
-                                 "Microsoft.XMLHTTP")
+    const msxmlProgids = new Array(
+      "MSXML2.XMLHTTP.5.0",
+      "MSXML2.XMLHTTP.4.0",
+      "MSXML2.XMLHTTP.3.0",
+      "MSXML2.XMLHTTP",
+      "Microsoft.XMLHTTP",
+    )
     for(
-      var i = 0;
-      i < msxmlProgids.length && typeof(request) == "undefined";
+      const i = 0;
+      i < msxmlProgids.length && request == null;
       i++
     ) {
       try {
@@ -319,7 +318,7 @@ export function getXMLHttpRequest(callback) {
       }
     }
   }
-  if(typeof(request) != "undefined") {
+  if(request != null) {
     setXMLHttpCallback(request, callback)
   }
   return request
@@ -327,7 +326,7 @@ export function getXMLHttpRequest(callback) {
 
 // export function setXMLHttpCallback(request, callback) {
 //   if(typeof(callback) != "undefined") {
-//     var handler = function() {
+//     const handler = function() {
 //       if(
 //         typeof(arguments) != "undefined"
 //         && typeof(arguments.callee) != "undefined"
@@ -373,47 +372,59 @@ export async function loadXMLDocument(url, callback) {
 }
 
 export function selectNodes(document, xpath, namespaceID, namespace) {
+  let nodes = null
   try {
     if(document.evaluate) {
-      var resolver = null
+      let resolver = null
       if(namespace) {
-        resolver = { normalResolver: document.createNSResolver(document.documentElement),
-                     lookupNamespaceURI: function(prefix) {
-                       switch(prefix) {
-                       case namespaceID: return namespace
-                       default: return this.normalResolver.lookupNamespaceURI(prefix)
-                       }
-                     }
-                   }
+        resolver = {
+          normalResolver: (
+            document.createNSResolver(document.documentElement)
+          ),
+          lookupNamespaceURI: function(prefix) {
+            switch(prefix) {
+              case namespaceID: return namespace
+              default: return this.normalResolver.lookupNamespaceURI(prefix)
+            }
+          }
+        }
       }
-      var nodes = document.evaluate(xpath, document, resolver,
-                                    XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null)
+      nodes = document.evaluate(
+        xpath, document, resolver,
+        XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null,
+      )
       nodes.length = function() { return this.snapshotLength }
       nodes.item = function(index) { return this.snapshotItem(index) }
-    } else if(document.documentElement &&
-              typeof(document.documentElement.selectNodes) != "undefined") {
+    } else if(
+      document.documentElement
+      && document.documentElement.selectNodes != null
+    ) {
       if(namespace) {
-        document.setProperty("SelectionNamespaces",
-                             "xmlns:" + namespaceID + "='" + namespace + "'")
+        document.setProperty(
+          "SelectionNamespaces",
+          `xmlns:${namespaceID}='${namespace}'`
+        )
       }
       document.setProperty("SelectionLanguage", "XPath")
       nodes = document.documentElement.selectNodes(xpath)
     } else {
-      alert("Could not select XPath: " + xpath + " on " + document)
+      console.error(
+        `Could not select XPath: ${xpath} on ${document}.`
+      )
     }
   } catch(e) {
-    alert("[" + xpath + "]: " + e)
+    console.error(`[${xpath}]: ${e.message}`)
   }
   return nodes
 }
 
 export function getCookie() {
-  var values = new Array()
-  var cookieParts = document.cookie.split(/ * */)
-  for(var i = 0; i < cookieParts.length; i++) {
-    var equalsIndex = cookieParts[i].indexOf("=")
+  const values = new Array()
+  const cookieParts = document.cookie.split(/ +/g)
+  for(const i = 0; i < cookieParts.length; i++) {
+    const equalsIndex = cookieParts[i].indexOf("=")
     if(equalsIndex > 0) {
-      var name = cookieParts[i].substring(0, equalsIndex)
+      const name = cookieParts[i].substring(0, equalsIndex)
       values[name] = unescape(cookieParts[i].substring(equalsIndex + 1))
     }
   }
@@ -421,17 +432,19 @@ export function getCookie() {
 }
 
 export function setCookie(values, expiration) {
-  if(typeof(expiration) == "undefined") {
+  if(expiration == null) {
     expiration = 1 // one day
   }
-  if(typeof(values['expires']) == "undefined") {
-    var expirationDate = new Date() 
-    expirationDate.setTime(expirationDate.getTime() + (expiration * 24 * 60 * 60 * 1000))
-    values['expires'] = expirationDate.toGMTString()
+  if(values.expires == null) {
+    const expirationDate = new Date() 
+    expirationDate.setTime(
+      expirationDate.getTime() + (expiration * 24 * 60 * 60 * 1000)
+    )
+    values.expires = expirationDate.toGMTString()
   }
-  var cookieValue = ""
+  const cookieValue = ""
   for(value in values) {
-    cookieValue += value + "=" + values[value] + ""
+    cookieValue += `${value}=${values[value]}`
   }
   document.cookie = cookieValue
 }

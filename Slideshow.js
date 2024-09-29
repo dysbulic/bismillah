@@ -7,14 +7,12 @@ import { uiInterface } from './control.js'
 export class ImageInfo {
   constructor(image, styleParam) {
     this.image = image
-    if(typeof(styleParam) != "undefined" && styleParam != null) {
+    if(styleParam) {
       this.style = new Array()
-      styleParam = styleParam.replace(/^\s+/, "")
-      styleParam = styleParam.replace(/\s+$/, "")
-      var styleElements = styleParam.split(/\s*\s*/)
-      for(var i = 0; i < styleElements.length; i++) {
-        var styleValues = styleElements[i].split(/\s*:\s*/)
-        this.style[styleValues[0]] = styleValues[1]
+      const styleElements = styleParam.trim().split(/\s+/)
+      for(const styleElem of styleElements) {
+        const [key, ...val] = styleElem.split(/\s*:\s*/)
+        this.style[key] = val
       }
     }
     this.startTime = undefined
@@ -22,13 +20,13 @@ export class ImageInfo {
   }
 
   toString() {
-    return "ImageInfo: " + this.image
+    return `ImageInfo: ${this.image}`
   }
 }
 
 export class DocumentInfo {
   constructor() {
-    this.element = document.createElement("div")
+    this.element = document.createElement('div')
     this.timings = new Array()
   }
 }
@@ -53,7 +51,7 @@ EventsArray.prototype = new Array()
 // Array Subclassing is not working in IE6
 //EventsArray.prototype.indexOfLastEventAt = function(time) {
 export function indexOfLastEventAt(time) {
-  var index = undefined
+  let index = undefined
   if(this.length > 0) {
     /* My binary version of this search was buggy so this is simple linear */
     index = 0
@@ -61,7 +59,7 @@ export function indexOfLastEventAt(time) {
       index++
     }
     /* The loop will overshoot by 1, so if it is 0, it didn't find any */
-    if(index == 0) {
+    if(index === 0) {
       index = undefined
     } else {
       index--
@@ -106,14 +104,16 @@ export class Slideshow {
     while(this.activeEvents.length > 0) {
       this.activeEvents.pop().active = false
     }
-    for(var i = 0; i < this.events.length; i++) {
+    for(const i = 0; i < this.events.length; i++) {
       uiInterface.hideElement(this.events[i].element)
     }
   }
 
   seekToTime(time) {
-    var index = this.stopIndex = this.events.indexOfLastEventAt(time)
-    for(var i = this.activeEvents.length - 1; i >= 0; i--) {
+    const index = this.stopIndex = (
+      this.events.indexOfLastEventAt(time)
+    )
+    for(const i = this.activeEvents.length - 1; i >= 0; i--) {
       if(this.activeEvents[i].startTime > time
         || this.activeEvents[i].endTime <= time) {
         uiInterface.hideElement(this.activeEvents[i].element)
@@ -121,9 +121,12 @@ export class Slideshow {
         this.activeEvents.splice(i, 1)
       }
     }
-    if(typeof(index) != "undefined") {
+    if(index != null) {
       for(; index >= 0; index--) {
-        if(this.events[index].endTime > time && !this.events[index].active) {
+        if(
+          this.events[index].endTime > time
+          && !this.events[index].active
+        ) {
           this.events[index].active = true
           uiInterface.showElement(this.events[index].element)
           this.activeEvents.push(this.events[index])
@@ -134,21 +137,21 @@ export class Slideshow {
   }
 
   load(
-    xmlDocument, // DOM configureation
+    xmlDocument, // DOM configuration
     uiInterface, // object with UI interface functions
   ) {
     this.uiInterface = uiInterface
     this.backgroundMusic =
-      xmlDocument.documentElement.getAttribute("backgroundMusic")
+      xmlDocument.documentElement.getAttribute('backgroundMusic')
 
-    var finishLayout = function(event) {
+    const finishLayout = function(event) {
       this.ui.layout(this.slides, this.stopPoints)
     }
     finishLayout.stopPoints = this.extractStopPoints(xmlDocument)
     finishLayout.slides = this.extractSlides(xmlDocument)
     finishLayout.ui = this
     this.loaded = true
-    addListener(uiInterface, "load", finishLayout, false)
+    addListener(uiInterface, 'load', finishLayout, false)
     finishLayout.call(finishLayout) // the event could already have fired
   }
 
@@ -160,31 +163,24 @@ export class Slideshow {
     if(!this.configured && uiInterface.loaded && !this.finishingLayout) {
       this.finishingLayout = true
       this.timeSlides(slides, stopPoints)
-      for(var i = 0; i < slides.length; i++) {
-        var slideEvents = uiInterface.layoutSlide(slides[i])
+      for(const i = 0; i < slides.length; i++) {
+        const slideEvents = uiInterface.layoutSlide(slides[i])
         //this.events = this.events.concat(slideEvents) // Adding a mystery element
         while(slideEvents.length > 0) {
           this.events.push(slideEvents.pop())
         }
       }
-      this.events.sort(function (a, b) {
-        if(a.startTime == b.startTime) {
-          return 0
-        } else if(a.startTime > b.startTime) {
-          return 1
-        } else {
-          return -1
-        }
-      })
-      for(i = 0; i < this.events.length; i++) {
-        this.presentationTime = Math.max(this.presentationTime,
-                                        this.events[i].endTime)
+      this.events.sort((a, b) => (a.startTime - b.startTime))
+      for(const i = 0; i < this.events.length; i++) {
+        this.presentationTime = Math.max(
+          this.presentationTime, this.events[i].endTime,
+        )
       }
       this.configured = true
       this.finishingLayout = undefined
 
-      var event = createEvent("Events")
-      event.initEvent("configure", true, true) //true for can bubble, true for cancelable
+      const event = createEvent('Events')
+      event.initEvent('configure', true, true) //true for can bubble, true for cancelable
       this.dispatchEvent(event)
     }
   }
@@ -197,71 +193,80 @@ export class Slideshow {
    * The startTime can be overridden
    */
   timeSlides(slides, stopPoints) {
-    var currentStopIndex = -1
+    let currentStopIndex = -1
 
-    var setSlideStartTime = function(element, startTime) {
-      if(typeof(startTime) == "undefined") {
+    const setSlideStartTime = (element, startTime) => {
+      if(startTime == null) {
         startTime = element.startTime
       }
-      if(typeof(startTime) != "undefined") {
-        if(startTime == "none") {
+      if(startTime != null) {
+        if(startTime === 'none') {
           // start time will be handled by the loader
-        } else if(startTime.indexOf("+") >= 0) { // relative offset
-          var offset =
-            parseInt(startTime.substring(startTime.indexOf("+") + 1))
+        } else if(startTime.contains('+')) { // relative offset
+          const offset = (
+            parseInt(startTime.substring(startTime.indexOf('+') + 1))
+          )
           // The first slide cannot have a relative offset
           if(currentStopIndex < 0) {
             currentStopIndex = 0
           }
           try {
-            element.startTime = stopPoints[currentStopIndex] + offset
+            element.startTime = (
+              stopPoints[currentStopIndex] + offset
+            )
           } catch(e) {
-            alert("Error Setting Start Time: " + e.message + ":" + element.nodeName)
+            console.error(
+              'Error Setting Start Time:'
+              + ` ${e.message}:${element.nodeName}`
+            )
           }
         } else {
-          element.startTime = parseInt(element.startTime)
+          element.startTime = Number(element.startTime)
         }
       } else {
         if(currentStopIndex >= stopPoints.length) {
-          alert("Too few stop points: " + stopPoints.length)
+          console.error(
+            `Too Few Stop Points: ${stopPoints.length}`
+          )
         }
         element.startTime = stopPoints[++currentStopIndex]
       }
     }
 
-    for(var slideIndex = 0; slideIndex < slides.length; slideIndex++) {
-      var slide = slides[slideIndex]
+    for(const slideIndex = 0; slideIndex < slides.length; slideIndex++) {
+      const slide = slides[slideIndex]
       setSlideStartTime(slide)
-      for(let elementIndex = 0; elementIndex < slide.length; elementIndex++) {
-        var element = slide[elementIndex]
+      for(const elementIndex = 0; elementIndex < slide.length; elementIndex++) {
+        const element = slide[elementIndex]
         /* The first element should display as the slide opens
         *  unless it has an explicit offset specified
         */
-        if(elementIndex == 0 && typeof(element.startTime) == "undefined") {
-          setSlideStartTime(element, "+0")
+        if(elementIndex == 0 && element.startTime == null) {
+          setSlideStartTime(element, '+0')
         } else {
           setSlideStartTime(element, element.startTime)
         }
-        if(slide.type == "html") {
-          var timings = element.timings
-          for(var i = 0; i < timings.length; i++) {
+        if(slide.type == 'html') {
+          const { timings } = element
+          for(const i = 0; i < timings.length; i++) {
             setSlideStartTime(timings[i], timings[i].startTime)
           }
         }
       }
-      var endTime = stopPoints[currentStopIndex + 1]
-      if(typeof(slide.duration) != "undefined") {
-        endTime = slide.startTime + parseInt(slide.duration)
+      const endTime = stopPoints[currentStopIndex + 1]
+      if(slide.duration != null) {
+        endTime = slide.startTime + Number(slide.duration)
       }
       slide.endTime = endTime
-      for(let elementIndex = 0; elementIndex < slide.length; elementIndex++) {
+      for(const elementIndex = 0; elementIndex < slide.length; elementIndex++) {
         slide[elementIndex].endTime = endTime
       }
-      if(slide.type == "html") {
-        var timings = element.timings
-        for(var i = 0; i < timings.length; i++) {
-          if(!timings[i].element)
-            alert("No timing on: " + timings[i].element)
+      if(slide.type == 'html') {
+        const { timings } = element
+        for(const i = 0; i < timings.length; i++) {
+          if(!timings[i].element) {
+            console.error(`No timing on: ${timings[i].element}`)
+          }
           timings[i].endTime = endTime
         }
       }
@@ -272,22 +277,24 @@ export class Slideshow {
    * Takes a document and returns is list of an stop points that are present
    */
   extractStopPoints(xmlDocument) {
-    var stopPointLists = xmlDocument.getElementsByTagName("stopPointList")
-    var stopPoints = new Array()
-    for(var listIndex = 0; listIndex < stopPointLists.length; listIndex++) {
-      var list = stopPointLists.item(listIndex)
-      for(var childIndex = 0; childIndex < list.childNodes.length; childIndex++) {
-        if(list.childNodes.item(childIndex).nodeType == Node.TEXT_NODE) {
-          var points = list.childNodes.item(childIndex).data.split(/\s+/)
-          for(var pointIndex = 0; pointIndex < points.length; pointIndex++) {
-            if(points[pointIndex] != "") {
-              stopPoints.push(parseInt(points[pointIndex]))
+    const stopPointLists = (
+      xmlDocument.getElementsByTagName('stopPointList')
+    )
+    const stopPoints = new Array()
+    for(const list of Array.from(stopPointLists)) {
+      for(const child of Array.from(list.childNodes)) {
+        if(child.nodeType === Node.TEXT_NODE) {
+          const points = child.data.split(/\s+/)
+          for(const point of points) {
+            if(point !== '') {
+              stopPoints.push(Number(point))
             }
           }
-        } else if(list.childNodes.item(childIndex).nodeType == Node.COMMENT_NODE) {
+        } else if(child.nodeType == Node.COMMENT_NODE) {
         } else {
-          alert("Unexpected child of stopPointsList: " +
-                list.childNodes.item(childIndex).nodeType)
+          console.error(
+            `Unexpected child of stopPointsList: ${child.nodeType}.`
+          )
         }
       }
     }
@@ -298,93 +305,112 @@ export class Slideshow {
    * Extracts basic information about the slides
    */
   async extractSlides(xmlDocument) {
-    var slideElements = xmlDocument.getElementsByTagName("slide")
-    var slideProps = ["startTime", "duration"]
-    var slides = new Array()
-    for(var slideIndex = 0; slideIndex < slideElements.length; slideIndex++) {
-      var slide = slideElements.item(slideIndex)
-      var objects = new Array()
-      for(var propIndex = 0; propIndex < slideProps.length; propIndex++) {
-        if(slide.getAttribute(slideProps[propIndex]) != null) {
-          objects[slideProps[propIndex]] = slide.getAttribute(slideProps[propIndex])
+    const slideElements = (
+      xmlDocument.getElementsByTagName('slide')
+    )
+    const slideProps = ['startTime', 'duration']
+    const slides = new Array()
+    for(const slide of Array.from(slideElements)) {
+      const objects = new Array()
+      for(const prop of slideProps) {
+        if(slide.getAttribute(prop) != null) {
+          objects[prop] = slide.getAttribute(prop)
         }
       }
-      for(var childIndex = 0; childIndex < slide.childNodes.length; childIndex++) {
-        var child = slide.childNodes.item(childIndex)
+      for(const child of Array.from(slide.childNodes)) {
         if(child.nodeType == Node.ELEMENT_NODE) {
           switch(child.nodeName) {
-          case "document":
-            var info = new DocumentInfo()
-            for(var i = 0; i < child.childNodes.length; i++) {
-              var elm = child.childNodes.item(i)
-              if(elm.nodeType == Node.ELEMENT_NODE) {
-                info.timings.push
-                  ({id : elm.getAttribute("targetId"),
-                    startTime : elm.getAttribute("startTime"),
-                    duration : elm.getAttribute("duration"),
-                    animation : elm.getAttribute("introAnimation")})
+            case 'document': {
+              const info = new DocumentInfo()
+              for(const elm of Array.from(child.childNodes)) {
+                if(elm.nodeType === Node.ELEMENT_NODE) {
+                  info.timings.push({
+                    id: elm.getAttribute('targetId'),
+                    startTime: elm.getAttribute('startTime'),
+                    duration: elm.getAttribute('duration'),
+                    animation: elm.getAttribute('introAnimation'),
+                  })
+                }
               }
+              this.uiInterface.loadHTML(
+                child.getAttribute('src'), info,
+              )
+              objects.push(info)
+              objects.type = 'html'
+              break
             }
-            this.uiInterface.loadHTML(child.getAttribute("src"), info)
-            objects.push(info)
-            objects.type = "html"
-            break
-          case "image":
-            objects.push(new ImageInfo
-                        (this.uiInterface.loadImage(child.getAttribute("src")),
-                          child.getAttribute("style")))
-            for(var propIndex = 0; propIndex < slideProps.length; propIndex++) {
-              if(child.getAttribute(slideProps[propIndex]) != null) {
-                objects[objects.length - 1][slideProps[propIndex]] =
-                  child.getAttribute(slideProps[propIndex])
+            case 'image': {
+              objects.push(new ImageInfo(
+                this.uiInterface.loadImage(child.getAttribute('src')),
+                child.getAttribute('style'),
+              ))
+              for(const prop of slideProps) {
+                if(child.getAttribute(prop) != null) {
+                  objects.at(-1)[prop] = child.getAttribute(prop)
+                }
               }
+              break
             }
-            break
-          case "loader":
-            var func = ""
-            for(var nodeIndex = 0; nodeIndex < child.childNodes.length; nodeIndex++) {
-              if(child.childNodes.item(nodeIndex).nodeType == Node.TEXT_NODE ||
-                child.childNodes.item(nodeIndex).nodeType == Node.CDATA_SECTION_NODE) {
-                func += child.childNodes.item(nodeIndex).data
+            case 'loader': {
+              let script = child.getAttribute('src')
+              if(!script) {
+                script = ''
+                for(const sub of Array.from(child.childNodes)) {
+                  if(
+                    [Node.TEXT_NODE, Node.CDATA_SECTION_NODE]
+                    .includes(sub.nodeType)
+                  ) {
+                    script += sub.data
+                  }
+                }
+                if(script != '') {
+                  script = (
+                    'data:text/javascript;charset=utf-8,'
+                    + encodeURIComponent(script)
+                  )
+                }
               }
+              console.debug(`Loading: "${script}".`)
+              const { default: loader } = await import(script)
+              objects.loader = loader
+              break
             }
-            if(func != "") {
-              const dataURI = `data:text/javascript;charset=utf-8,${encodeURIComponent(func)}`
-              const module = await import(dataURI)
-              objects.loader = module.default
+            default: {
+              console.error(`Unknown slide element: ${child.nodeName}`)
             }
-            break
-          default:
-            alert("Unknown slide element: " + child.nodeName)
           }
         }
+        slides.push(objects)
       }
-      slides.push(objects)
     }
     return slides
   }
 
-  addEventListener(event, listener, bubble) {
-    if(event == "configure") {
-      if(typeof(this.configureListeners) == "undefined") {
-        this.configureListeners = new Array()
-      }
+  addEventListener(type, listener, bubble) {
+    if(type === 'configure') {
+      this.configureListeners ??= new Array()
       this.configureListeners.push(listener)
+    } else {
+      console.error(`Unknown Event Type: "${type}".`)
     }
   }
 
   dispatchEvent(event) {
-    if(event.type == "configure" && 
-      typeof(this.configureListeners) != "undefined") {
-      for(var i = 0; i < this.configureListeners.length; i++) {
-        this.configureListeners[i].call(this.configureListeners[i], event)
+    if(
+      event.type === 'configure'
+      && this.configureListeners != null
+    ) {
+      for(const listener of this.configureListeners) {
+        listener.call(listener, event)
       }
     }
   }
 
   addEvent(element, startTime, endTime) {
     if(startTime >= endTime) {
-      alert("Event ends at " + endTime +" <= when it starts " + startTime)
+      console.error(
+        `Event ends at ${endTime} <= when it starts ${startTime}.`
+      )
     }
     this.events.push(new DisplayEvent(element, startTime, endTime))
     this.presentationTime = Math.max(presentationTime, endTime)

@@ -73,10 +73,10 @@ a:hover {
   text-align: center;
 }
 
-#mp3_player {
+#player {
   display: inline;
   width: 95%;
-  height: 15px;
+  height: 1.5rem;
   border: thin solid gray;
 }
 

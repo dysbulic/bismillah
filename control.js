@@ -3,10 +3,10 @@ import { UIInterface } from './UIInterface.js'
 import { Slideshow } from './Slideshow.js'
 
 export const slideshow = new Slideshow()
-export var uiInterface
-export var mp3Player
-export var slider
-export var timeout = 50 // timeout between updates in milliseconds
+export let uiInterface
+export let mp3Player
+export let slider
+export let timeout = 50 // timeout between updates in milliseconds
 
 export function setup(slideshowConfig, containerName, sliderName, playerName) {
   slider = setupSlider(sliderName)

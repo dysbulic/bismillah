@@ -1,40 +1,42 @@
 import {
-  setStyleProperty, addListener, loadXMLDocument, selectNodes,
+  setStyleProperty, addListener,
+  loadXMLDocument, selectNodes,
   createEvent, nodeIsInDocument,
-} from "./compatability.js"
-import { DisplayEvent } from "./Slideshow.js"
-import { slideshow, uiInterface } from "./control.js"
+} from './compatability.js'
+import { DisplayEvent } from './Slideshow.js'
+import { slideshow, uiInterface } from './control.js'
 
 /**
  * Represents an interface between a Slideshow and the containing page
  */
-
 export class UIInterface {
   constructor(container) {
     this.container = container
-    container.tempImageHolder = document.createElement("div")
-    container.tempImageHolder.className = "tablecell"
+    container.tempImageHolder = document.createElement('div')
+    container.tempImageHolder.className = 'tablecell'
     container.appendChild(container.tempImageHolder)
 
-    this.removeElements = true; // either removeChild or display="none" elements on hide
+    this.removeElements = true; // either removeChild or display='none' elements on hide
     this._unloadedObjects = 0;    // number of images requested, but not uploaded
     this.loaded = false
-    this.loadingStyle = new Array()
-    this.loadingStyle["border"] = "2px solid red"
-    this.loadingStyle["width"] = this.loadingStyle["height"] = "40px"
-    this.loadedStyle = new Array()
-    this.loadedStyle["border-color"] = "green"
-    this.loadErrorStyle = new Array()
-    this.loadErrorStyle["border-color"] = "orange"
+    this.loadingStyle = {}
+    this.loadingStyle.border = '2px solid red'
+    this.loadingStyle.width = this.loadingStyle.height = '40px'
+    this.loadedStyle = { 'border-color': 'green' }
+    this.loadErrorStyle = { 'border-color': 'orange' }
   }
 
   loadImage(filename) {
-    var image = new Image()
-    for(var prop in this.loadingStyle) {
+    const image = new Image()
+    for(const prop in this.loadingStyle) {
       setStyleProperty(image, prop, this.loadingStyle[prop])
     }
-    var loadListener = function() { uiInterface.imageLoaded(image) }
-    var errorListener = function() { uiInterface.imageError(this.error) }
+    const loadListener = () => {
+      uiInterface.imageLoaded(image)
+    }
+    const errorListener = () => {
+      uiInterface.imageError(this.error)
+    }
     loadListener.image = errorListener.image = image
     loadListener.ui = errorListener.ui = this
     addListener(image, 'load', loadListener, false)
@@ -46,14 +48,14 @@ export class UIInterface {
   }
 
   imageLoaded(image) {
-    for(var prop in this.loadedStyle) {
+    for(const prop in this.loadedStyle) {
       setStyleProperty(image, prop, this.loadedStyle[prop])
     }
     this.decrementObjectCount()
   }
 
   imageError(image) {
-    for(var prop in this.loadErrorStyle) {
+    for(const prop in this.loadErrorStyle) {
       setStyleProperty(image, prop, this.loadErrorStyle[prop])
     }
     this.decrementObjectCount()
@@ -65,7 +67,7 @@ export class UIInterface {
       this.ui.decrementObjectCount()
     }
     callback.info = info
-    callback.info.element.className = "htmlholder"
+    callback.info.element.className = 'htmlholder'
     callback.ui = this
     this.incrementObjectCount()
     loadXMLDocument(filename, callback)
@@ -73,58 +75,76 @@ export class UIInterface {
   }
 
   loadDocument(loadedDocument, info) {
-    if(typeof(info.timings) == "undefined") {
-      alert("Error: Timings not specified")
+    const { timings } = info
+    if(!timings) {
+      throw new Error('Timings not specified.')
     } else {
-      var timings = info.timings
-      for(var i = 0; i < timings.length; i++) {
-        /* getElementById is not defined in IE, so use XPath */
-        var nodes = selectNodes(loadedDocument, "//*[@id=\"" + timings[i]["id"] + "\"]")
-        if(!nodes || nodes.length == 0) {
-          alert("Couldn't find: " + timings[i]["id"])
-          timings.splice(i, 1)
+      for(const timing of timings) {
+        const time = loadedDocument.getElementById(timing.id)
+        if(!time) {
+          console.error(`Couldn’t find: ${timing.id}`)
+          // timings.splice(i, 1)
         } else {
-          timings[i].element = nodes.item(0)
+          timing.element = time
         }
       }
-      nodes = selectNodes(loadedDocument, "//html:body", "html", "http://www.w3.org/1999/xhtml")
-      if(!nodes || nodes.length == 0) {
-        alert("Could not locate html:body element")
+      const body = loadedDocument.querySelector('body')
+      if(!body) {
+        throw new Error(
+          'Could not locate html:body element.'
+        )
       } else {
-        var body = nodes.item(0)
         while(body.hasChildNodes()) {
-          var child = body.firstChild
+          const child = body.firstChild
           body.removeChild(child)
           try {
             info.element.appendChild(child)
           } catch(e) {
-            info.element.appendChild(document.createElement("div"))
-            info.element.lastChild.appendChild(document.createTextNode("Error Loading: " + child.nodeName))
+            info.element.appendChild(
+              document.createElement('div')
+            )
+            info.element.lastChild.appendChild(
+              document.createTextNode(
+                `Error Loading: ${child.nodeName}`
+              )
+            )
           }
         }
       }
-      nodes = selectNodes(loadedDocument, "//html:head", "html", "http://www.w3.org/1999/xhtml")
-      if(!nodes || nodes.length == 0) {
-        alert("Could not locate html:head element")
+      const head = loadedDocument.querySelector('head')
+      if(!head) {
+        throw new Error(
+          'Could not locate html:head element'
+        )
       } else {
-        var head = nodes.item(0)
-        var dochead = document.getElementsByTagName("head").item(0)
+        const dochead = (
+          document.getElementsByTagName('head').item(0)
+        )
         while(head.hasChildNodes()) {
-          var child = head.firstChild
+          const child = head.firstChild
           head.removeChild(child)
-          if(child.nodeType == Node.ELEMENT_NODE &&
-            (child.nodeName.toLowerCase() == "style" ||
-              child.nodeName.toLowerCase() == "link")) {
+          if(
+            child.nodeType == Node.ELEMENT_NODE
+            && (
+              ['style', 'link'].includes(
+                child.nodeName.toLowerCase()
+              )
+            )
+          ) {
             try {
               dochead?.appendChild(child)
               child.disabled = true
             } catch(e) {
-              info.element.appendChild(document.createElement("div"))
-              info.element.lastChild.appendChild(document.createTextNode("Error Loading: " + child.nodeName))
+              info.element.appendChild(
+                document.createElement('div')
+              )
+              info.element.lastChild.appendChild(
+                document.createTextNode(
+                  `Error Loading: ${child.nodeName}`
+                )
+              )
             }
-            if(typeof(info.styleSheets) == "undefined") {
-              info.styleSheets = new Array()
-            }
+            info.styleSheets ??= new Array()
             info.styleSheets.push(child)
           }
         }
@@ -139,21 +159,23 @@ export class UIInterface {
         info.element.parentNode.removeChild(info.element)
       }
     } else {
-      if(typeof(info.savedDisplay) == "undefined") {
-        if(typeof(window.getComputedStyle) != "undefined") {
-          info.savedDisplay = window.getComputedStyle(info.element, null).display
-        } else if(typeof(info.element.currentStyle) != "undefined") {
+      if(info.savedDisplay == null) {
+        if(typeof(window.getComputedStyle) !== 'undefined') {
+          info.savedDisplay = (
+            window.getComputedStyle(info.element, null).display
+          )
+        } else if(info.element.currentStyle != null) {
           info.savedDisplay = info.element.currentStyle.display
         } else {
-          info.savedDisplay = "inline"
+          info.savedDisplay = 'inline'
         }
       }
-      info.element.style.display = "none"
+      info.element.style.display = 'none'
     }
-    if(typeof(info.styleSheets) != "undefined") {
-      for(var i = 0; i < info.styleSheets.length; i++) {
+    if(info.styleSheets != null) {
+      for(const sheet of info.styleSheets) {
         try {
-          info.styleSheets[i].disabled = true
+          sheet.disabled = true
         } catch(e) {}
       }
     }
@@ -167,12 +189,10 @@ export class UIInterface {
     } else {
       info.element.style.display = info.savedDisplay
     }
-    if(typeof(info.styleSheets) != "undefined") {
-      for(var i = 0; i < info.styleSheets.length; i++) {
-        try {
-          info.styleSheets[i].disabled = false
-        } catch(e) {}
-      }
+    for(const sheet of info.styleSheets ?? []) {
+      try {
+        sheet.disabled = false
+      } catch(e) {}
     }
   }
 
@@ -184,8 +204,8 @@ export class UIInterface {
     this._unloadedObjects--
     if(this._unloadedObjects == 0 && slideshow.loaded) { // config is parsed
       this.loaded = true
-      var event = createEvent("Events")
-      event.initEvent("load", true, true); //true for can bubble, true for cancelable
+      const event = createEvent('Events')
+      event.initEvent('load', true, true); //true for can bubble, true for cancelable
       this.dispatchEvent(event)
     }
   }
@@ -194,30 +214,34 @@ export class UIInterface {
     if(nodeIsInDocument(this.container.tempImageHolder)) {
       this.container.removeChild(this.container.tempImageHolder)
     }
-    var events = new Array()
+    const events = new Array()
     if(slide.length > 0) {
-      var element = document.createElement("div")
-      if(typeof(slide.loader) !== "undefined") {
+      const element = document.createElement('div')
+      if(slide.loader) {
         events = slide.loader.call(this, slide, element)
-      } else  if(slide.type == "html") {
-        for(var i = 0; i < slide.length; i++) {
-          element.className = "tablecell single"
+      } else  if(slide.type == 'html') {
+        for(const i = 0; i < slide.length; i++) {
+          element.className = 'tablecell single'
           events = this.layoutHTML(slide, element)
         }
       } else { // image slide, no mixed mode slides at this point
-        var customLayout = typeof(slide[0].style) != "undefined"
-        for(i = 1; i < slide.length; i++) {
-          if((customLayout && typeof(slide[i].style) == "undefined") ||
-            (!customLayout && typeof(slide[i].style) != "undefined")) {
+        const customLayout = slide[0].style != null
+        for(const { style } of slide) {
+          if(
+            (customLayout && style == null)
+            || (!customLayout && style != null)
+          ) {
             // Must all be custom or none
-            alert("Mixed table and custom layout not currently supported")
+            console.error(
+              'Mixed table and custom layout'
+              + ' not currently supported.'
+            )
           }
         }
         if(customLayout) {
           events = this.layoutCustomImages(slide, element)
-        } else if(slide.length == 1) {
-          //element.setAttribute("class", "tablecell single"); // doesn't work in IE6
-          element.className = "tablecell single"
+        } else if(slide.length === 1) {
+          element.classList = ['tablecell', 'single']
           if(nodeIsInDocument(slide[0].image)) {
             slide[0].image.parentNode.removeChild(slide[0].image)
           }
@@ -226,15 +250,19 @@ export class UIInterface {
           events = this.layoutImageTable(slide, element)
         }
       }
-      for(i = 0; i < slide.length; i++) {
-        if(typeof(slide[i].image) != "undefined") {
-          for(var prop in this.loadingStyle) {
-            setStyleProperty(slide[i].image, prop, null)
+      for(const { image } of slide) {
+        if(image) {
+          for(const prop in this.loadingStyle) {
+            setStyleProperty(image, prop, null)
           }
         }
       }
       this.container.appendChild(element)
-      events.push(new DisplayEvent({ element : element }, slide.startTime, slide.endTime))
+      events.push(
+        new DisplayEvent(
+          { element }, slide.startTime, slide.endTime
+        )
+      )
     }
     return events
   }
@@ -243,19 +271,21 @@ export class UIInterface {
    * Take a slide and lay the elements out in a customlayout div
    */
   layoutCustomImages(slide, holder) {
-    var events = new Array()
-    holder.className = "customlayout"
-    for(var i = 0; i < slide.length; i++) {
-      var info = slide[i]
-      info.element = document.createElement("div")
-      info.element.className = "customelm"
+    const events = new Array()
+    holder.className = 'customlayout'
+    for(const i = 0; i < slide.length; i++) {
+      const info = slide[i]
+      info.element = document.createElement('div')
+      info.element.className = 'customelm'
       try {
         holder.appendChild(info.element)
       } catch(e) {
-        alert("Error: Couldn't add custom image holder")
+        console.error(
+          `Couldn’t add custom image holder: ${e.message}`
+        )
       }
-      if(typeof(slide[i].style) != "undefined") {
-        for(var prop in slide[i].style) {
+      if(typeof(slide[i].style) !== 'undefined') {
+        for(const prop in slide[i].style) {
           setStyleProperty(info.element, prop, slide[i].style[prop])
         }
       }
@@ -274,32 +304,34 @@ export class UIInterface {
    * Take a slide and put the elements in a css table
    */
   layoutImageTable(slide, holder) {
-    var events = new Array()
-    holder.className = "multipics"
-    var col = undefined
-    var switchIndex = Math.floor(slide.length / 2)
-    for(var index = 0; index < slide.length; index++) {
-      var info = slide[index]
-      if(index == 0 || index == switchIndex) {
-        col = document.createElement("div")
-        var className = (index == 0 ? "left" : "right") + "col"
+    const events = new Array()
+    holder.className = 'multipics'
+    let col = undefined
+    const switchIndex = Math.floor(slide.length / 2)
+    for(const index = 0; index < slide.length; index++) {
+      const info = slide[index]
+      if(index === 0 || index === switchIndex) {
+        col = document.createElement('div')
+        const classList = [`${(index == 0 ? 'left' : 'right')}col`]
         if(index == 0) {
-          className += " elm-" + switchIndex
+          classList.push(`elm-${switchIndex}`)
         } else {
-          className += " elm-" + (slide.length - switchIndex)
+          classList.push(`elm-${slide.length - switchIndex}`)
         }
-        col.className = className
+        col.classList = classList
         holder.appendChild(col)
       }
-      info.element = document.createElement("div")
-      info.element.className = "innertable"
+      info.element = document.createElement('div')
+      info.element.className = 'innertable'
       col?.appendChild(info.element)
-      if(typeof(slide[index]) != "undefined") {
-        var tablecell = document.createElement("div")
-        tablecell.className = "tablecell"
+      if(typeof(slide[index]) !== 'undefined') {
+        const tablecell = document.createElement('div')
+        tablecell.className = 'tablecell'
         info.element.appendChild(tablecell)
         if(nodeIsInDocument(slide[index].image)) {
-          slide[index].image.parentNode.removeChild(slide[index].image)
+          slide[index].image
+          .parentNode
+          .removeChild(slide[index].image)
         }
         tablecell.appendChild(slide[index].image)
         events.push(new DisplayEvent(
@@ -313,34 +345,33 @@ export class UIInterface {
   }
 
   layoutHTML(slide, holder) {
-    var events = new Array()
-    for(var i = 0; i < slide.length; i++) {
+    const events = new Array()
+    for(const i = 0; i < slide.length; i++) {
       holder.appendChild(slide[i].element)
-      events.push(new DisplayEvent(slide[i],
-                                  slide.startTime,
-                                  slide.endTime))
-      for(var j = 0; j < slide[i].timings.length; j++) {
-        var timing = slide[i].timings[j]
-        events.push(new DisplayEvent(timing, timing.startTime, timing.endTime))
+      events.push(new DisplayEvent(
+        slide[i], slide.startTime, slide.endTime,
+      ))
+      for(const j = 0; j < slide[i].timings.length; j++) {
+        const timing = slide[i].timings[j]
+        events.push(new DisplayEvent(
+          timing, timing.startTime, timing.endTime,
+        ))
       }
     }
     return events
   }
 
   addEventListener(event, listener, bubble) {
-    if(event == "load") {
-      if(typeof(this.loadListeners) == "undefined") {
-        this.loadListeners = new Array()
-      }
+    if(event === 'load') {
+      this.loadListeners ??= new Array()
       this.loadListeners.push(listener)
     }
   }
 
   dispatchEvent(event) {
-    if(event.type == "load" && 
-      typeof(this.loadListeners) != "undefined") {
-      for(var i = 0; i < this.loadListeners.length; i++) {
-        this.loadListeners[i].call(this.loadListeners[i], event)
+    if(event.type == 'load' && this.loadListeners) {
+      for(const listener of this.loadListeners) {
+        listener.call(listener, event)
       }
     }
   }

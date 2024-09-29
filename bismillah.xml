@@ -30,7 +30,7 @@
     83440 84313
     85712 86708
     88061 88919
-    90163 
+    90163
     92995 94209 96450
     97695
     100867 103115 105445 107708
@@ -64,8 +64,7 @@
     205064 207160
   </stopPointList>
   <slide>
-    <!-- IE doesn't use mimetype <document src="intro.xhtml"> -->
-    <document src="intro.xml">
+    <document src="intro.xhtml">
       <element targetId="french" startTime="+3000" />
       <element targetId="hassaniya" startTime="+3750" />
       <element id="pulaar" targetId="pulaar" startTime="+4500" />
@@ -74,212 +73,212 @@
     </document>
   </slide>
   <slide>
-    <image src="the first session.sized.jpg" />
+    <image src="sized/the first session.sized.jpg" />
   </slide>
   <slide>
-    <image src="jill, lisa, natalie and erin.sized.jpg" />
+    <image src="sized/jill, lisa, natalie and erin.sized.jpg" />
   </slide>
   <slide>
-    <image src="at the bureau.sized.jpg" />
+    <image src="sized/at the bureau.sized.jpg" />
   </slide>
   <slide>
-    <image src="angus communing.sized.jpg" />
+    <image src="sized/angus communing.sized.jpg" />
   </slide>
   <slide>
-    <image src="robert the pimp.sized.jpg" />
+    <image src="sized/robert the pimp.sized.jpg" />
   </slide>
   <slide>
-    <image src="training in rinjao.sized.jpg" /> 
+    <image src="sized/training in rinjao.sized.jpg" /> 
   </slide>
   <slide>
-    <image src="marc learning hassaniya.sized.jpg" /> 
+    <image src="sized/marc learning hassaniya.sized.jpg" /> 
   </slide>
   <slide>
-    <image src="dancing dan.sized.jpg" /> 
+    <image src="sized/dancing dan.sized.jpg" /> 
   </slide>
   <slide>
-    <image src="dan, audrey, lisa and erin in stage.sized.jpg" /> 
-    <image src="pre-swearing.sized.jpg" /> 
-    <image src="biri's wedding.sized.jpg" /> 
+    <image src="sized/dan, audrey, lisa and erin in stage.sized.jpg" /> 
+    <image src="sized/pre-swearing.sized.jpg" /> 
+    <image src="sized/biri's wedding.sized.jpg" /> 
   </slide>
   <slide>
-    <image src="carl buying fabric.sized.jpg" /> 
-    <image src="carl, ali, jay and matt.sized.jpg" /> 
-    <image src="getting training.sized.jpg" /> 
-    <image src="molly and ayrin mulafaed.sized.jpg" /> 
+    <image src="sized/carl buying fabric.sized.jpg" /> 
+    <image src="sized/carl, ali, jay and matt.sized.jpg" /> 
+    <image src="sized/getting training.sized.jpg" /> 
+    <image src="sized/molly and ayrin mulafaed.sized.jpg" /> 
   </slide>
   <slide>
-    <image src="getting ready to swear.sized.jpg" /> 
-    <image src="girls after swearing.sized.jpg" /> 
-    <image src="jen, melanie and lisa at swearing.sized.jpg" /> 
-    <image src="dressed up for swearing.sized.jpg" /> 
+    <image src="sized/getting ready to swear.sized.jpg" /> 
+    <image src="sized/girls after swearing.sized.jpg" /> 
+    <image src="sized/jen, melanie and lisa at swearing.sized.jpg" /> 
+    <image src="sized/dressed up for swearing.sized.jpg" /> 
   </slide>
   <slide>
-    <image src="molly and angus eating.sized.jpg" />
-    <image src="mark l.sized.jpg" /> 
-    <image src="gonna play some hoops.sized.jpg" /> 
+    <image src="sized/molly and angus eating.sized.jpg" />
+    <image src="sized/mark l.sized.jpg" /> 
+    <image src="sized/gonna play some hoops.sized.jpg" /> 
   </slide>
   <slide>
-    <image src="lisa, jess and scott at swearing.sized.jpg" /> 
+    <image src="sized/lisa, jess and scott at swearing.sized.jpg" /> 
   </slide>
   <slide>
-    <image src="will and mark having a shot.sized.jpg" /> 
-    <image src="carl and erin drinkin'.sized.jpg" /> 
+    <image src="sized/will and mark having a shot.sized.jpg" /> 
+    <image src="sized/carl and erin drinkin'.sized.jpg" /> 
   </slide>
   <slide> 
-    <image src="will, mark and dan in boghé.sized.jpg"
+    <image src="sized/will, mark and dan in boghé.sized.jpg"
            style="top: 0%; left: 2%; width: 45%" /> 
-    <image src="fifi, nate and lewis in dakar.sized.jpg"
+    <image src="sized/fifi, nate and lewis in dakar.sized.jpg"
            style="top: 0%; left: 52%; width: 45%" /> 
-    <image src="chris and matt.sized.jpg"
+    <image src="sized/chris and matt.sized.jpg"
            style="top: 45%; left: 25%; width: 45%" /> 
   </slide> 
   <slide> 
-  <image src="teresa, ayrin and natalie teaching.sized.jpg"
+  <image src="sized/teresa, ayrin and natalie teaching.sized.jpg"
            style="top: 15%; left: 40%; width: 55%" />
-  <image src="jill brushing her teeth.sized.jpg"
+  <image src="sized/jill brushing her teeth.sized.jpg"
            style="top: 0%; left: 2%; width: 40%" />
-  <image src="virginia and mulafa women.sized.jpg"
+  <image src="sized/virginia and mulafa women.sized.jpg"
          style="top: 50%; left: 2%; width: 40%" /> 
   </slide> 
   <slide>
-    <image src="mark, erin and will.with eyes.sized.jpg" /> 
+    <image src="sized/mark, erin and will.with eyes.sized.jpg" /> 
   </slide>
   <slide>
-    <image src="natalie washing.sized.jpg" /> 
+    <image src="sized/natalie washing.sized.jpg" /> 
   </slide> 
   <slide> 
-    <image src="virginia, ben, erin and andy.sized.jpg" /> 
+    <image src="sized/virginia, ben, erin and andy.sized.jpg" /> 
   </slide>
   <slide>
-    <image src="scott in dogon.sized.jpg" /> 
+    <image src="sized/scott in dogon.sized.jpg" /> 
   </slide> 
   <slide>
-    <image src="cat in green.sized.jpg" /> 
-    <image src="molly laughing.sized.jpg" />
+    <image src="sized/cat in green.sized.jpg" /> 
+    <image src="sized/molly laughing.sized.jpg" />
   </slide> 
   <slide> 
-    <image src="eating chinese.sized.jpg" /> 
+    <image src="sized/eating chinese.sized.jpg" /> 
   </slide> 
   <slide> 
-    <image src="genny, hector and a baobab.sized.jpg"
+    <image src="sized/genny, hector and a baobab.sized.jpg"
            style="top: 0%; left: 50%; width: 45%" /> 
-    <image src="molly, genny and hector on an elephant.sized.jpg"
+    <image src="sized/molly, genny and hector on an elephant.sized.jpg"
            style="top: 15%; left: 2%; width: 55%" /> 
   </slide>
   <slide>
-    <image src="moctar and karl.sized.jpg" /> 
-    <image src="ben and erin with the vip sign.sized.jpg" /> 
+    <image src="sized/moctar and karl.sized.jpg" /> 
+    <image src="sized/ben and erin with the vip sign.sized.jpg" /> 
   </slide>
   <slide> 
-    <image src="dan surveying a field.sized.jpg" /> 
-    <image src="making concrete.sized.jpg" /> 
+    <image src="sized/dan surveying a field.sized.jpg" /> 
+    <image src="sized/making concrete.sized.jpg" /> 
   </slide> 
   <slide> 
-    <image src="bonfire post waist hash run.sized.jpg" /> 
+    <image src="sized/bonfire post waist hash run.sized.jpg" /> 
   </slide> 
   <slide> 
-    <image src="janine feeling alice up.sized.jpg" />
-    <image src="marc shooting angus.sized.jpg" /> 
-    <image src="erin, annika and jill.sized.jpg" /> 
+    <image src="sized/janine feeling alice up.sized.jpg" />
+    <image src="sized/marc shooting angus.sized.jpg" /> 
+    <image src="sized/erin, annika and jill.sized.jpg" /> 
   </slide> 
   <slide> 
-    <image src="nouakchott crew at the beach.sized.jpg" />
+    <image src="sized/nouakchott crew at the beach.sized.jpg" />
   </slide> 
   <slide> 
-    <image src="cat post braids.sized.jpg" /> 
-    <image src="natalie working on the computer.sized.jpg" /> 
-    <image src="super scott.sized.jpg" /> 
-    <image src="margaret and a horse.sized.jpg" /> 
+    <image src="sized/cat post braids.sized.jpg" /> 
+    <image src="sized/natalie working on the computer.sized.jpg" /> 
+    <image src="sized/super scott.sized.jpg" /> 
+    <image src="sized/margaret and a horse.sized.jpg" /> 
   </slide>
   <slide> 
-    <image src="jess, dana and maggie cooking.sized.jpg" /> 
-    <image src="carl, lisa and mark.sized.jpg" /> 
-    <image src="watching tv at obie's.sized.jpg" />
-    <image src="boulie and audrey in the bathroom.sized.jpg" /> 
+    <image src="sized/jess, dana and maggie cooking.sized.jpg" /> 
+    <image src="sized/carl, lisa and mark.sized.jpg" /> 
+    <image src="sized/watching tv at obie's.sized.jpg" />
+    <image src="sized/boulie and audrey in the bathroom.sized.jpg" /> 
   </slide>
   <slide> 
-    <image src="marge, marc and jordy at the marine party.sized.jpg" /> 
+    <image src="sized/marge, marc and jordy at the marine party.sized.jpg" /> 
   </slide> 
   <slide>
-    <image src="angus up to bat.sized.jpg" /> 
-    <image src="brown eyed girls.sized.jpg" />
+    <image src="sized/angus up to bat.sized.jpg" /> 
+    <image src="sized/brown eyed girls.sized.jpg" />
   </slide> 
   <slide> 
-    <image src="waist 2004 team 1.sized.jpg" /> 
-    <image src="waist 2004 team 2.sized.jpg" /> 
+    <image src="sized/waist 2004 team 1.sized.jpg" /> 
+    <image src="sized/waist 2004 team 2.sized.jpg" /> 
   </slide> 
   <slide> 
-    <image src="audrey cheering.sized.jpg" /> 
-    <image src="waist '05 winners.sized.jpg" /> 
-    <image src="lisa and obie with the trophy.sized.jpg" /> 
+    <image src="sized/audrey cheering.sized.jpg" /> 
+    <image src="sized/waist '05 winners.sized.jpg" /> 
+    <image src="sized/lisa and obie with the trophy.sized.jpg" /> 
   </slide> 
   <slide>
-    <image src="bearded men.sized.jpg" /> 
+    <image src="sized/bearded men.sized.jpg" /> 
   </slide> 
   <slide> 
-    <image src="post waist victory.sized.jpg" /> 
+    <image src="sized/post waist victory.sized.jpg" /> 
   </slide> 
   <slide> 
-    <image src="erin napping with her kitten.sized.jpg" /> 
-    <image src="carl, miriam and stephanie running.sized.jpg" />
-    <image src="stephanie petting dan.sized.jpg" /> 
-    <image src="marc and angus in shades.sized.jpg" /> 
+    <image src="sized/erin napping with her kitten.sized.jpg" /> 
+    <image src="sized/carl, miriam and stephanie running.sized.jpg" />
+    <image src="sized/stephanie petting dan.sized.jpg" /> 
+    <image src="sized/marc and angus in shades.sized.jpg" /> 
   </slide>
   <slide> 
-    <image src="jen and fish audrey.sized.jpg" />
+    <image src="sized/jen and fish audrey.sized.jpg" />
   </slide> 
   <slide>
-    <image src="dana, dan and molly molesting each other.sized.jpg" /> 
+    <image src="sized/dana, dan and molly molesting each other.sized.jpg" /> 
   </slide> 
   <slide> 
-    <image src="natalie and ayrin dressed up.sized.jpg" /> 
-    <image src="heather and janine dressed up.sized.jpg" /> 
+    <image src="sized/natalie and ayrin dressed up.sized.jpg" /> 
+    <image src="sized/heather and janine dressed up.sized.jpg" /> 
   </slide> 
   <slide> 
-    <image src="jen with her tongue out.sized.jpg" /> 
-    <image src="scott and mark ready for a swim.sized.jpg" /> 
+    <image src="sized/jen with her tongue out.sized.jpg" /> 
+    <image src="sized/scott and mark ready for a swim.sized.jpg" /> 
   </slide> 
   <slide> 
-    <image src="scott with a hunter.sized.jpg" /> 
-    <image src="ayrin on a cannon.sized.jpg" /> 
+    <image src="sized/scott with a hunter.sized.jpg" /> 
+    <image src="sized/ayrin on a cannon.sized.jpg" /> 
   </slide> 
   <slide> 
-    <image src="valentine's hash.sized.jpg" /> 
+    <image src="sized/valentine's hash.sized.jpg" /> 
   </slide> 
   <slide> 
-    <image src="videographer mitch.sized.jpg"
+    <image src="sized/videographer mitch.sized.jpg"
            style="top: 0%; left: 0%; width: 40%" /> 
-    <image src="will messed up.sized.jpg"
+    <image src="sized/will messed up.sized.jpg"
            style="top: 0%; left: 65%; width: 40%" /> 
-    <image src="carl spanking virginia.sized.jpg"
+    <image src="sized/carl spanking virginia.sized.jpg"
            style="top: 50%; left: 0%; width: 40%" /> 
-    <image src="andy and dan flashing signs.sized.jpg"
+    <image src="sized/andy and dan flashing signs.sized.jpg"
            style="top: 50%; left: 65%; width: 40%" /> 
-    <image src="golem nate.sized.jpg"
+    <image src="sized/golem nate.sized.jpg"
            style="top: 30%; left: 30%; width: 40%" /> 
   </slide> 
   <slide>
-    <image src="will and marc on a ledge.sized.jpg"
+    <image src="sized/will and marc on a ledge.sized.jpg"
            style="top:0%; left: 3%; width: 65%" /> 
-    <image src="marc and barbie mounting camels.sized.jpg"
+    <image src="sized/marc and barbie mounting camels.sized.jpg"
            style="top:55%; left: 55%; width: 40%" /> 
   </slide>
   <slide> 
-    <image src="will, marc and scott post fatatyers.sized.jpg" /> 
+    <image src="sized/will, marc and scott post fatatyers.sized.jpg" /> 
   </slide> 
   <slide> 
-    <image src="hanging with the family.sized.jpg" /> 
+    <image src="sized/hanging with the family.sized.jpg" /> 
   </slide> 
   <slide> 
-    <image src="leading kids.sized.jpg" /> 
+    <image src="sized/leading kids.sized.jpg" /> 
   </slide>
   <slide> 
-    <image src="brakna girls in a pirogue.sized.jpg" /> 
+    <image src="sized/brakna girls in a pirogue.sized.jpg" /> 
   </slide>
   <slide> 
-    <image src="pretty angus, miriam and erin.sized.jpg" /> 
-    <image src="audrey and ayrin smoking.sized.jpg" /> 
+    <image src="sized/pretty angus, miriam and erin.sized.jpg" /> 
+    <image src="sized/audrey and ayrin smoking.sized.jpg" /> 
   </slide> 
   <slide duration="10000">
     <image startTime="none" src="mugshots.sized/alice.sized.jpg" /> 
@@ -332,89 +331,7 @@
        - screen. It takes an array of images and returns an array of
        - DisplayEvents.
       -->
-    <loader type="text/javascript"><![CDATA[
-// import { setStyleProperty } from './compatability.js'
-// import { DisplayEvent } from './Slideshow.js'
-
-export function layout(slide, holder) {
-  var events = new Array()
-  holder.className = "customlayout"
-
-  var duration = slide.endTime - slide.startTime
-  var startDelay = duration * .1
-  // pics regularly for the first 2/3 of the slide's display
-  var picDelay = Math.round((2 * (duration - startDelay) / 3) / slide.length)
-
-  var orderIndexes = new Array()
-  var picIndexes = new Array()
-  for(var i = slide.length - 1; i >= 0; i--) {
-    orderIndexes.push(i + 1)
-    picIndexes.push(i)
-  }
-  orderIndexes.randomize()
-  picIndexes.randomize()
-
-  var topCount = 12
-  var sideCount = 6
-
-  for(var i = 0; i < slide.length; i++) {
-    var info = slide[i]
-    var index = orderIndexes[i]
-    info.element = document.createElement("div")
-    info.element.className = "customelm"
-    info.element.appendChild(slide[picIndexes[i]].image)
-
-    var allSideCount = 2 * topCount + 2 * (sideCount - 2)
-    var leftBorder = (topCount % 2 == 0 ? 1.5 : 2)
-    var topBorder = (sideCount % 2 == 0 ? 1.5 : 2)
-    if(index >= 1 && index <= topCount) { // top row
-      var offset = index
-      setStyleProperty(info.element, "left", (((offset - 1) / topCount) * 100) + "%")
-      setStyleProperty(info.element, "top", "0%")
-    } else if(index > topCount && index <= topCount + sideCount - 2) { // left side
-      var offset = index - topCount
-      setStyleProperty(info.element, "left", "0%")
-      setStyleProperty(info.element, "top", ((offset / sideCount) * 100) + "%")
-    } else if(index > topCount + sideCount - 2 && index <= topCount + 2 * (sideCount - 2)) { // right side
-      var offset = index - (topCount + sideCount - 2)
-      setStyleProperty(info.element, "left", (((topCount - 1) / topCount) * 100) + "%")
-      setStyleProperty(info.element, "top", ((offset / sideCount) * 100) + "%")
-    } else if(index > topCount + 2 * (sideCount - 2) && index <= allSideCount) { // bottom row
-      var offset = index - (topCount + 2 * (sideCount - 2))
-      setStyleProperty(info.element, "left", (((offset - 1) / topCount) * 100) + "%")
-      setStyleProperty(info.element, "top",  (((sideCount - 1) / sideCount) * 100) +  "%")
-    } else {
-      var offset = index - allSideCount
-      var rowOffset = topBorder
-      if(offset >= 1 && offset <= Math.ceil((topCount - 2 * leftBorder - 2) / 2)) {
-        setStyleProperty(info.element, "left", (((1 + leftBorder + 2 * (offset - 1)) / topCount) * 100) + "%")
-      } else if(offset > Math.ceil((topCount - 2 * leftBorder - 2) / 2) &&
-                offset <= topCount - 2 * leftBorder - 1) {
-        offset -= Math.ceil((topCount - 2 * leftBorder - 2) / 2)
-        if(offset / Math.ceil((topCount - 2 * leftBorder) / 2) > .5) {
-          offset++
-        }
-        setStyleProperty(info.element, "left", (((leftBorder + 2 * (offset - 1)) / topCount) * 100) + "%")
-        rowOffset++
-      } else {
-        offset -= topCount - leftBorder * 2 - 1
-        setStyleProperty(info.element, "left", (((1 + leftBorder + 2 * (offset - 1)) / topCount) * 100) + "%")
-        rowOffset += 2
-      }
-      setStyleProperty(info.element, "top",  ((rowOffset * 1 / sideCount) * 100) + "%")
-    }
-    setStyleProperty(info.element, "width", (1 / topCount * 100) + "%")
-
-    if(nodeIsInDocument(info.element)) {
-      info.element.parentNode.removeChild(info.element)
-    }
-    holder.appendChild(info.element)
-    events.push(new DisplayEvent(
-      info, slide.startTime + startDelay + picDelay * (i + 1), slide.endTime,
-    ))
-  }
-  return events
-}
-    ]]></loader>
+    <!-- <loader type="text/javascript"><![CDATA[]]></loader> -->
+    <loader src="./loader.js"/>
   </slide>
 </slideshow>
