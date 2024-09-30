@@ -72,7 +72,6 @@ export class Slideshow {
   constructor() {
     this.configured = false // if the slideshow is ready to start
     this.loaded = false     // if the data files have been loaded
-    // this.defaultDisplayTime = 1300 /* number of milliseconds to leave an item displayed */
     this.events = new EventsArray()
     this.events = new Array()
     this.events.indexOfLastEventAt = indexOfLastEventAt
@@ -85,7 +84,7 @@ export class Slideshow {
   }
 
   // IE lacks getters and setters completely, so this can't be pretty
-  getCurrentTime() {
+  get currentTime() {
     return new Date().getTime() - this.startTime
   }
 
@@ -141,20 +140,18 @@ export class Slideshow {
     uiInterface, // object with UI interface functions
   ) {
     this.uiInterface = uiInterface
-    this.backgroundMusic =
+    this.backgroundMusic = (
       xmlDocument.documentElement.getAttribute('backgroundMusic')
+    )
 
-    const finishLayout = function() {
-      this.ui.layout(this.slides, this.stopPoints)
-    }
-    finishLayout.stopPoints = this.extractStopPoints(xmlDocument)
-    finishLayout.slides = await this.extractSlides(xmlDocument)
-    finishLayout.ui = this
+    const stopPoints = this.extractStopPoints(xmlDocument)
+    const slides = await this.extractSlides(xmlDocument)
     this.loaded = true
+    const finishLayout = () => {
+      console.debug({ 'Finishing': { slides, stopPoints } })
+      this.layout(slides, stopPoints)
+    }
     addListener(uiInterface, 'load', finishLayout, false)
-    try {
-      finishLayout.call(finishLayout) // the event could already have fired
-    } catch(err) {}
   }
 
   /**
@@ -193,7 +190,7 @@ export class Slideshow {
   }
 
   /**
-   * Sets the display times on the slides. There are several possibilites:
+   * Sets the display times on the slides. There are several possibilities:
    * A slide with no timing specification:
    *  The slide and first element get the current stopPoint and each element
    *   after gets the next stopPoint the end time is the next unused stopPoint
@@ -243,15 +240,14 @@ export class Slideshow {
       }
     }
 
-    for(let slideIndex = 0; slideIndex < slides.length; slideIndex++) {
-      const slide = slides[slideIndex]
+    for(const slide of slides) {
       setSlideStartTime(slide)
-      for(let elementIndex = 0; elementIndex < slide.length; elementIndex++) {
-        const element = slide[elementIndex]
+      for(let elemIndex = 0; elemIndex < slide.length; elemIndex++) {
+        const element = slide[elemIndex]
         /* The first element should display as the slide opens
         *  unless it has an explicit offset specified
         */
-        if(elementIndex == 0 && element.startTime == null) {
+        if(elemIndex == 0 && element.startTime == null) {
           setSlideStartTime(element, '+0')
         } else {
           setSlideStartTime(element, element.startTime)
@@ -265,14 +261,15 @@ export class Slideshow {
       }
       let endTime = stopPoints[currentStopIndex + 1]
       if(slide.duration != null) {
-        endTime = slide.startTime + Number(slide.duration)
+        endTime = slide.startTime + slide.duration
       }
       slide.endTime = endTime
-      for(const element of slide) {
-        element.endTime = endTime
+
+      for(const info of slide) {
+        info.endTime = endTime
 
         if(slide.type == 'html') {
-          const { timings } = element
+          const { timings } = info
           for(const timing of timings) {
             if(!timing.element) {
               console.error(`No timing on: ${timing.element}`)
@@ -319,80 +316,92 @@ export class Slideshow {
     const slideElements = (
       xmlDocument.getElementsByTagName('slide')
     )
+
+    console.debug({ slides: Array.from(slideElements) })
+
     const slideProps = ['startTime', 'duration']
     const slides = new Array()
     for(const slide of Array.from(slideElements)) {
       const objects = new Array()
       for(const prop of slideProps) {
-        if(slide.getAttribute(prop) != null) {
-          objects[prop] = slide.getAttribute(prop)
-        }
+        let attr = slide.getAttribute(prop)
+        if(/^\d+$/.test(attr)) attr = Number(attr)
+        if(attr != null) objects[prop] = attr
       }
       for(const child of Array.from(slide.childNodes)) {
-        if(child.nodeType == Node.ELEMENT_NODE) {
-          switch(child.nodeName) {
-            case 'document': {
-              const info = new DocumentInfo()
-              for(const elm of Array.from(child.childNodes)) {
-                if(elm.nodeType === Node.ELEMENT_NODE) {
-                  info.timings.push({
-                    id: elm.getAttribute('targetId'),
-                    startTime: elm.getAttribute('startTime'),
-                    duration: elm.getAttribute('duration'),
-                    animation: elm.getAttribute('introAnimation'),
-                  })
+        if(child.nodeType !== Node.ELEMENT_NODE) {
+          continue
+        }
+        objects.type = child.nodeName
+        switch(child.nodeName) {
+          case 'document': {
+            const info = new DocumentInfo()
+            for(const elm of Array.from(child.childNodes)) {
+              if(elm.nodeType === Node.ELEMENT_NODE) {
+                const timing = {
+                  id: elm.getAttribute('targetId'),
+                  startTime: elm.getAttribute('startTime'),
+                  duration: elm.getAttribute('duration'),
+                  animation: elm.getAttribute('introAnimation'),
+                }
+                timing.duration = (
+                  timing.duration != null
+                  ? Number(timing.duration)
+                  : null
+                )
+                info.timings.push(timing)
+              }
+            }
+            this.uiInterface.loadHTML(
+              child.getAttribute('src'), info,
+            )
+            objects.push(info)
+            break
+          }
+          case 'image': {
+            objects.push(new ImageInfo(
+              this.uiInterface.loadImage(child.getAttribute('src')),
+              child.getAttribute('style'),
+            ))
+            for(const prop of slideProps) {
+              let attr = child.getAttribute(prop)
+              if(/^\d+$/.test(attr)) attr = Number(attr)
+              if(attr != null) objects.at(-1)[prop] = attr
+            }
+            break
+          }
+          case 'loader': {
+            let script = child.getAttribute('src')
+            if(!script) {
+              script = ''
+              for(const sub of Array.from(child.childNodes)) {
+                if(
+                  [Node.TEXT_NODE, Node.CDATA_SECTION_NODE]
+                  .includes(sub.nodeType)
+                ) {
+                  script += sub.data
                 }
               }
-              this.uiInterface.loadHTML(
-                child.getAttribute('src'), info,
-              )
-              objects.push(info)
-              objects.type = 'html'
-              break
-            }
-            case 'image': {
-              objects.push(new ImageInfo(
-                this.uiInterface.loadImage(child.getAttribute('src')),
-                child.getAttribute('style'),
-              ))
-              for(const prop of slideProps) {
-                if(child.getAttribute(prop) != null) {
-                  objects.at(-1)[prop] = child.getAttribute(prop)
-                }
+              if(script != '') {
+                script = (
+                  'data:text/javascript;charset=utf-8,'
+                  + encodeURIComponent(script)
+                )
               }
-              break
             }
-            case 'loader': {
-              let script = child.getAttribute('src')
-              if(!script) {
-                script = ''
-                for(const sub of Array.from(child.childNodes)) {
-                  if(
-                    [Node.TEXT_NODE, Node.CDATA_SECTION_NODE]
-                    .includes(sub.nodeType)
-                  ) {
-                    script += sub.data
-                  }
-                }
-                if(script != '') {
-                  script = (
-                    'data:text/javascript;charset=utf-8,'
-                    + encodeURIComponent(script)
-                  )
-                }
-              }
-              console.debug(`Loading: "${script}".`)
-              const { default: loader } = await import(script)
-              objects.loader = loader
-              break
-            }
-            default: {
-              console.error(`Unknown slide element: ${child.nodeName}`)
-            }
+            
+            console.debug(`Loading Loader: "${script}".`)
+
+            const { default: loader } = await import(script)
+            objects.loader = loader
+            break
+          }
+          default: {
+            console.error(`Unknown Slide Element: "${child.nodeName}".`)
           }
         }
-        slides.push(objects)
       }
+      slides.push(objects)
     }
     return slides
   }

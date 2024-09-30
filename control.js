@@ -45,7 +45,7 @@ function startShow() {
   slideshow.start()
   audioPlayer?.play()
   if(audioPlayer) {
-    audioPlayer.currentTime = slideshow.getCurrentTime()
+    audioPlayer.currentTime = slideshow.currentTime
   }
   step()
 }
@@ -71,7 +71,7 @@ function seekToTime(time) {
 
 function step() {
   if(slideshow.playing) {
-    const currentTime = slideshow.getCurrentTime()
+    const { currentTime } = slideshow
     seekToTime(currentTime)
     if(currentTime + timeout < slideshow.presentationTime) {
       const interval = timeout
@@ -126,7 +126,7 @@ function sliderSelected(event) {
   addListener(document, 'mousemove', sliderDrag, true)
   addListener(document, 'mouseup', sliderRelease, true)
 
-  startSelectedTime = slideshow.getCurrentTime()
+  startSelectedTime = slideshow.currentTime
   const link = uiInterface.container.startLink
   if(nodeIsInDocument(link.parentNode)) {
     uiInterface.container.removeChild(link)
@@ -135,9 +135,16 @@ function sliderSelected(event) {
 }
 
 function sliderDrag(event) {
-  const position = event.clientY - Math.round(slider.clientHeight / 2)
-  if(position > barStart && position < barLength - slider.clientHeight) {
-    slider.style.top = event.clientY - Math.round(slider.clientHeight / 2) + 'px'
+  const position = (
+    event.clientY - Math.round(slider.clientHeight / 2)
+  )
+  if(
+    position > barStart
+    && position < barLength - slider.clientHeight
+  ) {
+    slider.style.top = (
+      `${event.clientY - Math.round(slider.clientHeight / 2)}px`
+    )
     const time = Math.round(
       slideshow.presentationTime * position / barLength
     )
@@ -148,13 +155,12 @@ function sliderDrag(event) {
   }
 }
 
-function sliderRelease(event) {
+function sliderRelease() {
   slider.style.backgroundColor = null
   removeListener(document, 'mousemove', sliderDrag, true)
   removeListener(document, 'mouseup', sliderRelease, true)
 }
 
 function setupPlayer(playerName) {
-  const player = document.getElementById(playerName)
-  return player
+  return document.getElementById(playerName)
 }

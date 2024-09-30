@@ -24,12 +24,10 @@ if(!globalThis.Node) {
  * Returns if event listeners can be added
  */
 export function supportsEventListeners(element) {
-  if(typeof(element) == "undefined") {
-    element = this
-  }
+  if(element == null) element = this
   return (
-    typeof(element.addEventListener) != "undefined"
-    || typeof(this.attachEvent) != "undefined"
+    typeof(element.addEventListener) != 'undefined'
+    || typeof(this.attachEvent) != 'undefined'
   )
 }
 
@@ -45,11 +43,11 @@ export function supportsDynamicInsertion() {
  */
 export function addLoadListener(listener, onbubble) {
   if(supportsEventListeners(this)) {
-    addListener(this, "load", listener, onbubble)
+    addListener(this, 'load', listener, onbubble)
   } else if(supportsEventListeners(document)) {
-    addListener(document, "load", listener, onbubble)
+    addListener(document, 'load', listener, onbubble)
   } else {
-    alert("Could not set up load listener")
+    alert('Could not set up load listener')
   }
 }
 
@@ -58,12 +56,12 @@ export function addLoadListener(listener, onbubble) {
  */
 export function addListener(element, event, listener, bubble) {
   if(element.addEventListener) {
-    if(typeof(bubble) == "undefined") bubble = false
+    if(typeof(bubble) == 'undefined') bubble = false
     element.addEventListener(event, listener, bubble)
   } else if(this.attachEvent) {
-    element.attachEvent("on" + event, listener)
+    element.attachEvent('on' + event, listener)
   } else {
-    alert("Could not set up event listener")
+    console.error(`Could not set up ${event} listener.`)
   }
 }
 
@@ -72,12 +70,12 @@ export function addListener(element, event, listener, bubble) {
  */
 export function removeListener(element, event, listener, bubble) {
   if(element.removeEventListener) {
-    if(typeof(bubble) == "undefined") bubble = false
+    if(typeof(bubble) == 'undefined') bubble = false
     element.removeEventListener(event, listener, bubble)
   } else if(this.detachEvent) {
-    element.detachEvent("on" + event, listener)
+    element.detachEvent('on' + event, listener)
   } else {
-    alert("Could not remove event listener")
+    console.error(`Could not remove ${event} listener.`)
   }
 }
 
@@ -87,66 +85,85 @@ export const stylesheetAlerted = false
  * Add a new rule to the last stylesheet
  */
 export function addStylesheetRule(selector, declarations, stylesheet) {
-  if(typeof(stylesheet) == "undefined" &&
-     typeof(document.styleSheets) != "undefined") {
-    stylesheet = document.styleSheets[document.styleSheets.length - 1]
+  if(
+    stylesheet == null
+    && typeof(document.styleSheets) != 'undefined'
+  ) {
+    stylesheet = (
+      document.styleSheets[document.styleSheets.length - 1]
+    )
   }
-  if(typeof(stylesheet) != "undefined") {
+  if(stylesheet != null) {
     const rules = undefined
-    if(typeof(stylesheet.cssRules) != "undefined") {
+    if(stylesheet.cssRules != null) {
       rules = stylesheet.cssRules
-    } else if(typeof(stylesheet.rules) != "undefined") {
+    } else if(stylesheet.rules != null) {
       rules = stylesheet.rules
     }
-    if(typeof(rules) != "undefined") {
-      if(typeof(stylesheet.insertRule) != "undefined") {
-        stylesheet.insertRule(selector + "{" + declarations + "}", rules.length)
-        return rules[rules.length - 1].style
-      } else if(typeof(stylesheet.addRule) != "undefined") {
+    if(rules != null) {
+      if(stylesheet.insertRule != null) {
+        stylesheet.insertRule(
+          `${selector}{${declarations}}`,
+          rules.length,
+        )
+      } else if(stylesheet.addRule != null) {
         stylesheet.addRule(selector, declarations)
-        return rules[rules.length - 1].style
       }
+      return rules.at(-1).style
     }
   }
-  return undefined
 }
 
 /**
  * Add an option to a select
  */
 export function addOption(text, parent) {
-  if(text.length > 0) {
-    const option = document.createElement("option")
+  if(text) {
+    const option = document.createElement('option')
     option.appendChild(document.createTextNode(text))
     parent.appendChild(option)
   }
 }
 
-export function createEvent(type, useBuiltIn) {
-  if(typeof(document.createEvent) != "undefined" && useBuiltIn != false) {
+export function createEvent(type, useBuiltIn = true) {
+  if(typeof(document.createEvent) != 'undefined' && useBuiltIn) {
     return document.createEvent.apply(document, arguments)
   } else {
     const event = new Object()
-    event["init" + type.substring(0, type.length - 1)] = function() {
-      for(const i = 0; i < arguments.length && i < this.argNames.length; i++)
+    event[`init${type.substring(0, type.length - 1)}`] = function() {
+      for(
+        let i = 0;
+        i < arguments.length && i < this.argNames.length;
+        i++
+      ) {
         this[this.argNames[i]] = arguments[i]
+      }
     }
-    const baseArgs = new Array("type", "bubbles", "cancelable")
+    const baseArgs = ['type', 'bubbles', 'cancelable']
     switch(type) {
-      case "UIEvents":
-        event.argNames = baseArgs.concat(new Array("view", "detail"))
+      case 'UIEvents': {
+        event.argNames = baseArgs.concat(['view', 'detail'])
         break
-      case "MouseEvents":
-        event.argNames = baseArgs.concat(new Array
-          ("view", "detail", "screenX", "screenY", "clientX", "clientY",
-           "ctrlKey", "altKey", "shiftKey", "metaKey", "button", "relatedTarget"))
+      }
+      case 'MouseEvents': {
+        event.argNames = baseArgs.concat([
+          'view', 'detail', 'screenX', 'screenY',
+          'clientX', 'clientY', 'ctrlKey', 'altKey',
+          'shiftKey', 'metaKey', 'button',
+          'relatedTarget'
+        ])
         break
-      case "MutationEvents":
-        event.argNames = baseArgs.concat(new Array
-          ("relatedNode", "prevValue", "newValue", "attrName", "attrChange"))
+      }
+      case 'MutationEvents': {
+        event.argNames = baseArgs.concat([
+          'relatedNode', 'prevValue', 'newValue',
+          'attrName', 'attrChange'
+        ])
         break
-      default:
+      }
+      default: {
         event.argNames = baseArgs
+      }
     }
     return event
   }
@@ -160,10 +177,8 @@ export function getSource(event) {
     return event.target
   } else if(event.srcElement) {
     return event.srcElement
-  } else {
-    alert("Could not find event source")
   }
-  return null
+  console.error('Could not find event source.')
 }
 
 /**
@@ -178,7 +193,7 @@ export function killEvent(event) {
 }
 
 /**
- * Get the form associated with a component that has recieved
+ * Get the form associated with a component that has received
  * a submit event
  */
 export function getForm(submission) {
@@ -186,12 +201,10 @@ export function getForm(submission) {
   //  caused the submit or the whole form
   if(submission.form) {
     return submission.form
-  } else if(submission.tagName.toLowerCase() == "form") {
+  } else if(submission.tagName.toLowerCase() == 'form') {
     return submission
-  } else {
-    alert("Could not find form element")
-    return undefined
   }
+  console.error('Could not find form element.')
 }
 
 /**
@@ -202,25 +215,20 @@ export function printProperties(element, skipConstants) {
   for(let property in element) {
     if(skipConstants && property.match(/^[A-Z_0-9]*$/)) continue
 
-    const name = "element." + property
+    const name = `element.${property}`
     const value = element[property]
     const type = typeof(value)
 
-    if(!lists[type]) {
-      lists[type] = type + "s:"
-    }
+    if(!lists[type]) lists[type] = `${type}s:`
+    lists[type] += '\n'
 
-    lists[type] += "\n"
-
-    if(type == "function") {
+    if(type == 'function') {
       lists[type] += name
     } else {
-      lists[type] += name + " => " + value
+      lists[type] += `${name} => ${value}`
     }
   }
-  for(let type in lists) {
-    alert(lists[type])
-  }
+  console.info({ 'Object Properties': lists })
 }
 
 /**
@@ -236,8 +244,8 @@ export function clearNode(node) {
  * Append the elements in an array to an element
  */
 export function copyTo(holder, contents) {
-  for(const i = 0; i < contents.length; i++) {
-    holder.appendChild(contents[i])
+  for(const content of Array.from(contents)) {
+    holder.appendChild(content)
   }
 }
 
@@ -256,16 +264,16 @@ Array.prototype.randomize = function performFisherYates() {
 }
 
 export function nodeIsInDocument(node) {
-  return (typeof(node) != "undefined" &&
-          node != null &&
-          typeof(node.parentNode) != "undefined" &&
-          node.parentNode != null &&
-          node.parentNode.nodeType == Node.ELEMENT_NODE)
+  return (
+    node != null
+    && node.parentNode != null
+    && node.parentNode.nodeType == Node.ELEMENT_NODE
+  )
 }
 
 export function setStyleProperty(element, property, value) {
-  if(typeof(element?.style) == "undefined") {
-    console.error(`Not stylable: ${typeof(element)}:`, element)
+  if(element?.style == null) {
+    console.error(`Not Stylable: ${typeof(element)}:`, element)
   } else {
     if(element.style.setProperty) {
       element.style.setProperty(property, value, null)
@@ -280,15 +288,16 @@ export function setStyleProperty(element, property, value) {
 export function getCurrentStyle(element) {
   if(element.currentStyle) {
     return element.currentStyle
-  } else if(document.defaultView && document.defaultView.getComputedStyle) {
+  } else if(
+    document.defaultView
+    && document.defaultView.getComputedStyle
+  ) {
     return document.defaultView.getComputedStyle(element, '')
-  } else {
-    return undefined
   }
 }
 
 export function setOpacity(element, opacity) {
-  if(typeof(element.style.opacity) != "undefined") {
+  if(element?.style?.opacity != null) {
     element.style.opacity = opacity
   } else if(element.style.filter) {
   }
@@ -296,26 +305,21 @@ export function setOpacity(element, opacity) {
 
 export function getXMLHttpRequest(callback) {
   let request
-  if(typeof(XMLHttpRequest) !== "undefined") {
+  if(typeof(XMLHttpRequest) !== 'undefined') {
     request = new XMLHttpRequest()
   } else if(window.ActiveXObject) {
-    const msxmlProgids = new Array(
-      "MSXML2.XMLHTTP.5.0",
-      "MSXML2.XMLHTTP.4.0",
-      "MSXML2.XMLHTTP.3.0",
-      "MSXML2.XMLHTTP",
-      "Microsoft.XMLHTTP",
-    )
-    for(
-      const i = 0;
-      i < msxmlProgids.length && request == null;
-      i++
-    ) {
+    const msxmlProgIds = [
+      'MSXML2.XMLHTTP.5.0',
+      'MSXML2.XMLHTTP.4.0',
+      'MSXML2.XMLHTTP.3.0',
+      'MSXML2.XMLHTTP',
+      'Microsoft.XMLHTTP',
+    ]
+    for(const msxmlProgId of msxmlProgIds) {
       try {
-        request = new ActiveXObject(msxmlProgids[i])
-      } catch(e) {
-        //alert("Failed to Load: " + msxmlProgids[i])
-      }
+        request = new ActiveXObject(msxmlProgid)
+        if(request) break
+      } catch(e) {}
     }
   }
   if(request != null) {
@@ -323,45 +327,6 @@ export function getXMLHttpRequest(callback) {
   }
   return request
 }
-
-// export function setXMLHttpCallback(request, callback) {
-//   if(typeof(callback) != "undefined") {
-//     const handler = function() {
-//       if(
-//         typeof(arguments) != "undefined"
-//         && typeof(arguments.callee) != "undefined"
-//       ) {
-//         arguments.callee.callback.call(
-//           arguments.callee.callback,
-//           arguments.callee.request,
-//         )
-//       } else if(typeof(this.callback) != "undefined") {
-//         this.callback.call(this.callback, this.request)
-//       } else {
-//         alert("Could not find a callback from loadXMLDocument")
-//       }
-//     }
-//     handler.request = request
-//     handler.callback = callback
-//     request.onreadystatechange = handler
-//     return handler
-//   }
-// }
-
-// export function loadXMLDocument(url, callback, asynchronous, request) {
-//   if(typeof(request) == "undefined") {
-//     request = getXMLHttpRequest()
-//   }
-//   setXMLHttpCallback(request, callback)
-//   asynchronous = typeof(asynchronous) != "undefined" ? asynchronous : true
-//   try {
-//     request.open("GET", url, asynchronous)
-//     request.send(null)
-//   } catch(e) {
-//     alert("For: \"" + url + "\": " + e)
-//   }
-//   return request
-// }
 
 export async function loadXMLDocument(url, callback) {
   const res = await fetch(url)
@@ -381,10 +346,12 @@ export function selectNodes(document, xpath, namespaceID, namespace) {
           normalResolver: (
             document.createNSResolver(document.documentElement)
           ),
-          lookupNamespaceURI: function(prefix) {
+          lookupNamespaceURI(prefix) {
             switch(prefix) {
               case namespaceID: return namespace
-              default: return this.normalResolver.lookupNamespaceURI(prefix)
+              default: return (
+                this.normalResolver.lookupNamespaceURI(prefix)
+              )
             }
           }
         }
@@ -393,19 +360,19 @@ export function selectNodes(document, xpath, namespaceID, namespace) {
         xpath, document, resolver,
         XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null,
       )
-      nodes.length = function() { return this.snapshotLength }
-      nodes.item = function(index) { return this.snapshotItem(index) }
+      nodes.length = () => (nodes.snapshotLength)
+      nodes.item = (index) => (nodes.snapshotItem(index))
     } else if(
       document.documentElement
       && document.documentElement.selectNodes != null
     ) {
       if(namespace) {
         document.setProperty(
-          "SelectionNamespaces",
+          'SelectionNamespaces',
           `xmlns:${namespaceID}='${namespace}'`
         )
       }
-      document.setProperty("SelectionLanguage", "XPath")
+      document.setProperty('SelectionLanguage', 'XPath')
       nodes = document.documentElement.selectNodes(xpath)
     } else {
       console.error(
@@ -421,11 +388,13 @@ export function selectNodes(document, xpath, namespaceID, namespace) {
 export function getCookie() {
   const values = new Array()
   const cookieParts = document.cookie.split(/ +/g)
-  for(const i = 0; i < cookieParts.length; i++) {
-    const equalsIndex = cookieParts[i].indexOf("=")
+  for(const part of cookieParts) {
+    const equalsIndex = part.indexOf('=')
     if(equalsIndex > 0) {
-      const name = cookieParts[i].substring(0, equalsIndex)
-      values[name] = unescape(cookieParts[i].substring(equalsIndex + 1))
+      const name = part.substring(0, equalsIndex)
+      values[name] = decodeURIComponent(
+        part.substring(equalsIndex + 1)
+      )
     }
   }
   return values
@@ -442,9 +411,9 @@ export function setCookie(values, expiration) {
     )
     values.expires = expirationDate.toGMTString()
   }
-  const cookieValue = ""
-  for(value in values) {
-    cookieValue += `${value}=${values[value]}`
+  const cookieValue = ''
+  for(const key in values) {
+    cookieValue += `${key}=${encodeURIComponent(values[key])};`
   }
   document.cookie = cookieValue
 }

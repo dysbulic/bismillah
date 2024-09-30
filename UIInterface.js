@@ -19,6 +19,7 @@ export class UIInterface {
     this.removeElements = true; // either removeChild or set display='none' on hide
     this._unloadedObjects = 0; // number of images requested, but not uploaded
     this.loaded = false
+    this.loadEvents = new Array()
     this.loadingStyle = {}
     this.loadingStyle.border = '2px solid red'
     this.loadingStyle.width = this.loadingStyle.height = '40px'
@@ -202,8 +203,11 @@ export class UIInterface {
 
   decrementObjectCount() {
     this._unloadedObjects--
-    console.debug({ count: this._unloadedObjects, loaded: slideshow.loaded })
     if(this._unloadedObjects === 0 && slideshow.loaded) { // config is parsed
+      console.debug({ Done: {
+        count: this._unloadedObjects, loaded: slideshow.loaded
+      } })
+
       this.loaded = true
       const event = createEvent('Events')
       event.initEvent('load', true, true); //true for can bubble, true for cancelable
@@ -220,10 +224,10 @@ export class UIInterface {
       const element = document.createElement('div')
       if(slide.loader) {
         events = slide.loader.call(this, slide, element)
-      } else  if(slide.type == 'html') {
-        for(let i = 0; i < slide.length; i++) {
-          element.className = 'tablecell single'
-          events = this.layoutHTML(slide[i], element)
+      } else if(slide.type == 'document') {
+        for(const info of slide) {
+          element.classList.add('tablecell', 'single')
+          events = this.layoutHTML(info, element)
         }
       } else { // image slide, no mixed mode slides at this point
         const customLayout = slide[0].style != null
@@ -242,7 +246,7 @@ export class UIInterface {
         if(customLayout) {
           events = this.layoutCustomImages(slide, element)
         } else if(slide.length === 1) {
-          element.classList = ['tablecell', 'single']
+          element.classList.add('tablecell', 'single')
           if(nodeIsInDocument(slide[0].image)) {
             slide[0].image.parentNode.removeChild(slide[0].image)
           }
@@ -318,7 +322,7 @@ export class UIInterface {
         } else {
           classList.push(`elm-${slide.length - switchIndex}`)
         }
-        col.classList = classList
+        col.classList.add(...classList)
         holder.appendChild(col)
       }
       info.element = document.createElement('div')
@@ -344,19 +348,16 @@ export class UIInterface {
     return events
   }
 
-  layoutHTML(slide, holder) {
+  layoutHTML(info, holder) {
     const events = new Array()
-    for(let i = 0; i < slide.length; i++) {
-      holder.appendChild(slide[i].element)
+    holder.appendChild(info.element)
+    events.push(new DisplayEvent(
+      info, info.startTime, info.endTime,
+    ))
+    for(const timing of info.timings) {
       events.push(new DisplayEvent(
-        slide[i], slide.startTime, slide.endTime,
+        timing, timing.startTime, timing.endTime,
       ))
-      for(let j = 0; j < slide[i].timings.length; j++) {
-        const timing = slide[i].timings[j]
-        events.push(new DisplayEvent(
-          timing, timing.startTime, timing.endTime,
-        ))
-      }
     }
     return events
   }
@@ -367,16 +368,23 @@ export class UIInterface {
     }
     this.loadListeners ??= new Array()
     this.loadListeners.push(listener)
+    this.loadEvents.forEach((e) => ( // load events fired before registration
+      this.dispatchEvent(e, listener)
+    ))
   }
 
-  dispatchEvent(event) {
+  dispatchEvent(event, listener) {
     if(event.type !== 'load') {
       throw new Error(`Unknown Event Type: "${event.type}".`)
     }
-    if(!this.loadListeners) {
+    if(!this.loadEvents.includes(event)) {
+      this.loadEvents.push(event)
+    }
+    let listeners = listener ? [listener] : this.loadListeners
+    if(!listeners) {
       console.debug('No `load` listeners.')
     } else {
-      for(const listener of this.loadListeners) {
+      for(const listener of listeners) {
         listener.call(listener, event)
       }
     }
