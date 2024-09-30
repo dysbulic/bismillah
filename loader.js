@@ -1,7 +1,6 @@
 import {
   setStyleProperty, nodeIsInDocument,
 } from './compatability.js'
-import { DisplayEvent } from './Slideshow.js'
 import { slideshow } from './control.js'
 
 export default function layout(slide, holder) {

@@ -2,15 +2,18 @@ import { addListener, removeListener, loadXMLDocument, nodeIsInDocument } from '
 import { UIInterface } from './UIInterface.js'
 import { Slideshow } from './Slideshow.js'
 
+const hasParam = (name) => (
+  !!window.location.search.substring(1).split(/&/)
+  .find((q) => (q === name))
+)
+
 export const slideshow = new Slideshow()
 export let uiInterface
 export let audioPlayer
 export let slider
 export let timeout = 50 // timeout between updates in milliseconds
-export const debug = (
-  !!window.location.search.substring(1).split(/&/)
-  .find((q) => (q === 'debug'))
-)
+export const debug = hasParam('debug')
+export const verbose = hasParam('verbose')
 
 export async function setup(slideshowConfig, containerName, sliderName, playerName) {
   slider = setupSlider(sliderName)
@@ -41,13 +44,23 @@ function resetShow() {
 }
 
 function startShow() {
-  if(nodeIsInDocument(uiInterface.container.startLink)) {
-    uiInterface.container.removeChild(uiInterface.container.startLink)
+  const { startLink } = uiInterface.container
+  if(nodeIsInDocument(startLink)) {
+    startLink.parentNode.removeChild(startLink)
   }
   slideshow.start()
   audioPlayer?.play()
   if(audioPlayer) {
-    audioPlayer.currentTime = slideshow.currentTime
+    if(
+      typeof(slideshow.currentTime) !== 'number'
+      || isNaN(slideshow.currentTime)
+    ) {
+      console.warn({
+        'Slideshow Time': slideshow.currentTime,
+      })
+    } else {
+      audioPlayer.currentTime = slideshow.currentTime
+    }
   }
   step()
 }
@@ -57,17 +70,16 @@ function stopShow() {
   slideshow.stop()
 }
 
-const barStart = 4
+const barStart = 0
 const barLength = 580
 
 function seekToTime(time) {
-  slideshow.seekToTime(time)
+  slideshow.currentTime = time
+  const { presentationTime: total } = slideshow
+  const barSize = barLength - slider.clientHeight / 2
+  const scaledBarSize = barSize * time / total
   slider.style.top = (
-    `${
-      barStart + Math.round(
-        (barLength - 20) * time / slideshow.presentationTime
-      )
-    }px`
+    `${barStart + Math.round(scaledBarSize)}px`
   )
 }
 
@@ -76,19 +88,19 @@ function step() {
     const { currentTime } = slideshow
     seekToTime(currentTime)
     if(currentTime + timeout < slideshow.presentationTime) {
-      const interval = timeout
+      let interval = timeout
       if(
         slideshow.stopIndex != null
         && slideshow.stopIndex < slideshow.events.length - 1
       ) {
+        const { startTime: nextStart } = (
+          slideshow.events[slideshow.stopIndex + 1]
+        )
         interval = Math.min(
-          slideshow.events[slideshow.stopIndex + 1].startTime - currentTime,
-          interval,
+          nextStart - currentTime, interval
         )
       }
       setTimeout(step, interval)
-    } else {
-      //resetShow()
     }
   }
 }
@@ -107,7 +119,9 @@ function setupContainer(containerName) {
 
 function setupSlider(sliderName) {
   const slider = document.getElementById(sliderName)
-  if(!slider) throw new Error('Slider not found.')
+  if(!slider) {
+    throw new Error(`Slider "${sliderName}" not found.`)
+  }
   slider.style.position = 'absolute'
   addListener(slider, 'mousedown', sliderSelected, true)
   addListener(slider, 'click', sliderClicked, true)
@@ -116,15 +130,16 @@ function setupSlider(sliderName) {
 
 let startSelectedTime
 function sliderClicked(event) {
-  // const currentTime = slideshow.lastSeekTime - slideshow.startTime
-  //  if(Math.abs(startSelectedTime - currentTime)
-  //   < 50 * slideshow.timeout) {
+  console.debug({ pl: slideshow.playing })
+  if(!slideshow.playing) {
     startShow()
-    //}
+  } else {
+    stopShow()
+  }
 }
 
 function sliderSelected(event) {
-  slider.style.backgroundColor = 'green'
+  slider.classList.add('active')
   addListener(document, 'mousemove', sliderDrag, true)
   addListener(document, 'mouseup', sliderRelease, true)
 
@@ -141,18 +156,28 @@ function sliderDrag(event) {
   if(isNaN(total) || total < 0) {
     throw new Error(`Invalid \`presentationTime\`: ${total}`)
   }
-  const center = Math.round(slider.clientHeight / 2)
+  const sliderSize = slider.offsetHeight
+  const center = Math.round(sliderSize / 2)
   const position = event.clientY - center
   if(
-    position > barStart // after the start
-    && position < barLength - slider.clientHeight // before the end
+    position >= barStart // after the start
+    && position <= barLength - sliderSize // before the end
   ) {
     slider.style.top = `${position}px`
 
     const time = Math.round(total * position / barLength)
-    if(debug) {
+    if(debug && verbose) {
       console.debug({
-        'Seeking': { total, position, barLength, time }
+        'Seeking': {
+          time, total,
+          slider: {
+            click: event.clientY, size: sliderSize,
+            center, position,
+          },
+          bar: {
+            start: barStart, length: barLength,
+          },
+        },
       })
     }
     slideshow.currentTime = time
@@ -163,7 +188,7 @@ function sliderDrag(event) {
 }
 
 function sliderRelease() {
-  slider.style.backgroundColor = null
+  slider.classList.remove('active')
   removeListener(document, 'mousemove', sliderDrag, true)
   removeListener(document, 'mouseup', sliderRelease, true)
 }

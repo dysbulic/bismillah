@@ -1,5 +1,5 @@
 import { addListener, createEvent } from './compatability.js'
-import { uiInterface, debug } from './control.js'
+import { uiInterface as ui, debug } from './control.js'
 
 /**
  * Class used to hold the info about images in a custom layout
@@ -24,19 +24,77 @@ export class ImageInfo {
 }
 
 export class DocumentInfo {
-  constructor(root = 'div') {
-    this.element = document.createElement(root)
+  constructor(info = {}, opts = { newTag: 'div' }) {
+    if(!info.element) {
+      info.element = (
+        document.createElement(opts.newTag)
+      )
+    }
+    Object.assign(this, info)
     this.timings = []
   }
 }
 
-export class DisplayEvent {
-  constructor({ element, start: startTime, end: endTime }) {
-    if(!element) throw new Error('Missing `element`.')
-    if(startTime == null) startTime = element.startTime
-    if(endTime == null) endTime = element.endTime
-    Object.assign(this, { element, startTime, endTime })
-    this.active = false
+export class TimingInfo {
+  constructor(params) {
+    Object.assign(this, params)
+  }
+
+  static from(source) {
+    if(source instanceof Node) {
+      const timing = {
+        id: source.getAttribute('targetId'),
+        startTime: source.getAttribute('startTime'),
+        duration: source.getAttribute('duration'),
+        animation: source.getAttribute('introAnimation'),
+      }
+      timing.duration = (
+        timing.duration != null
+        ? Number(timing.duration)
+        : null
+      )
+      return new TimingInfo(timing)
+    } else {
+      throw new Error('Invalid source for `TimingInfo.from`.')
+    }
+  }
+}
+
+export const ProxiedDisplayEvent = {
+  active: null,
+
+  get(source, prop) {
+    switch(prop) {
+      case 'active': {
+        return this.active
+      }
+      case 'element': {
+        if(!source.element) {
+          throw new Error('Missing `element`.')
+        }
+      }
+      default: {
+        return source[prop]
+      }
+    }
+  },
+
+  set(source, prop, value) {
+    switch(prop) {
+      case 'active': {
+        if(value && this.active === false) {
+          ui.showElement(this)
+        } else if(!value && this.active === true) {
+          ui.hideElement(this)
+        }
+        this.active = value
+        break
+      }
+      default: {
+        source[prop] = value
+      }
+    }
+    return true
   }
 }
 
@@ -70,46 +128,34 @@ export class Slideshow {
     this.configured = false // if the slideshow is ready to start
     this.loaded = false     // if the data files have been loaded
     this.events = new EventsArray() // Needs prototype to work
-    // this.events = []
-    // this.events.indexOfLastAt = indexOfLastAt
     this.presentationTime = 0 /* running time for the presentation */
-    this.startTime = null /* time the show was started */
     this.lastSeekTime = 0 // last time seeked to; initially the start
     this.playing = false
-    this.activeEvents = [] /* currently visible events */
     this.stopIndex = null // Index in the events array of the latest active
   }
 
+  get activeEvents() {
+    return this.events.filter(({ active }) => (active))
+  }
+
   get currentTime() {
-    return new Date().getTime() - this.startTime
+    return this.lastSeekTime
   }
 
   set currentTime(time) {
+    for(const event of this.activeEvents) {
+      event.active = (
+        event.startTime > time
+        || event.endTime <= time
+      )
+    }
+
     const index = this.stopIndex = (
       this.events.indexOfLastAt(time)
     )
-    const { activeEvents: active } = this
-    for(const i = active.length - 1; i >= 0; i--) {
-      const event = active[i]
-      if(
-        event.startTime > time
-        || event.endTime <= time
-      ) {
-        uiInterface.hideElement(event.element)
-        event.active = false
-        this.activeEvents = active.filter((evt) => (
-          evt !== event
-        ))
-      }
-    }
     if(index != null) {
-      for(; index >= 0; index--) {
-        const event = this.events[index]
-        if(event.endTime > time && !event.active) {
-          event.active = true
-          uiInterface.showElement(event.element)
-          this.activeEvents.push(event)
-        }
+      for(const event of this.events.slice(0, index)) {
+        event.active = event.endTime > time
       }
     }
     this.lastSeekTime = time
@@ -117,7 +163,7 @@ export class Slideshow {
 
   start() {
     this.playing = true
-    this.startTime = new Date().getTime() - this.lastSeekTime
+    this.currentTime = 0
   }
 
   stop() {
@@ -127,19 +173,16 @@ export class Slideshow {
   reset() {
     this.lastSeekTime = 0
     this.playing = false
-    while(this.activeEvents.length > 0) {
-      this.activeEvents.pop().active = false
-    }
-    for(const { element: root } of this.events) {
-      uiInterface.hideElement(root)
-    }
+    this.activeEvents.forEach((evt) => (
+      evt.active = false
+    ))
   }
 
   async load(
     xmlDocument, // DOM configuration
-    uiInterface, // object with UI interface functions
+    ui, // object with UI interface functions
   ) {
-    this.uiInterface = uiInterface
+    this.ui = ui
     this.backgroundMusic = (
       xmlDocument.documentElement
       .getAttribute('backgroundMusic')
@@ -157,7 +200,7 @@ export class Slideshow {
 
       this.layout(slides, stopPoints)
     }
-    addListener(uiInterface, 'load', finishLayout, false)
+    addListener(ui, 'load', finishLayout, false)
   }
 
   /**
@@ -165,7 +208,7 @@ export class Slideshow {
    * until all the html is loaded
    */
   layout(slides, stopPoints) {
-    if(!uiInterface.loaded) {
+    if(!ui.loaded) {
       throw new Error('UI not loaded in `layout`.')
     }
     if(!this.configured && !this.finishingLayout) {
@@ -173,11 +216,7 @@ export class Slideshow {
       this.timeSlides(slides, stopPoints)
 
       for(const slide of Array.from(slides)) {
-        const slideEvents = uiInterface.layoutSlide(slide)
-        //this.events = this.events.concat(slideEvents) // Adding a mystery element
-        while(slideEvents.length > 0) {
-          this.events.push(slideEvents.pop())
-        }
+        this.events.push(...ui.layoutSlide(slide))
       }
       this.events.sort((a, b) => (a.startTime - b.startTime))
 
@@ -352,26 +391,15 @@ export class Slideshow {
           continue
         }
         objects.type = child.nodeName
-        switch(child.nodeName) {
+        switch(objects.type) {
           case 'document': {
             const info = new DocumentInfo()
             for(const elm of Array.from(child.childNodes)) {
               if(elm.nodeType === Node.ELEMENT_NODE) {
-                const timing = {
-                  id: elm.getAttribute('targetId'),
-                  startTime: elm.getAttribute('startTime'),
-                  duration: elm.getAttribute('duration'),
-                  animation: elm.getAttribute('introAnimation'),
-                }
-                timing.duration = (
-                  timing.duration != null
-                  ? Number(timing.duration)
-                  : null
-                )
-                info.timings.push(timing)
+                info.timings.push(TimingInfo.from(elm))
               }
             }
-            this.uiInterface.loadHTML(
+            this.ui.loadHTML(
               child.getAttribute('src'), info,
             )
             objects.push(info)
@@ -379,7 +407,7 @@ export class Slideshow {
           }
           case 'image': {
             objects.push(new ImageInfo(
-              this.uiInterface.loadImage(child.getAttribute('src')),
+              this.ui.loadImage(child.getAttribute('src')),
               child.getAttribute('style'),
             ))
             for(const prop of slideProps) {
@@ -408,7 +436,7 @@ export class Slideshow {
                 )
               }
             }
-            
+
             if(debug) {
               console.debug({ 'Loading Loader': script })
             }
@@ -446,9 +474,9 @@ export class Slideshow {
     }
   }
 
-  addEvent(element, start, end, opts = { append: false }) {
-    start ??= element.start ?? element.startTime
-    end ??= element.end ?? element.endTime
+  addEvent(info, start, end, opts = { append: false }) {
+    start ??= info.start ?? info.startTime
+    end ??= info.end ?? info.endTime
 
     if(start >= end) {
       console.warn(
@@ -457,18 +485,24 @@ export class Slideshow {
       ;[start, end] = [end, start]
     }
 
+    let element = info
     while(element.element) element = element.element
     while(element.image) element = element.image
 
-    const event = new DisplayEvent({ element, start, end })
+    Object.assign(info, {
+      element, startTime: start, endTime: end
+    })
+
+    const event = (
+      new Proxy(info, ProxiedDisplayEvent)
+    )
+    event.active = false
 
     if(opts.append) this.events.push(event)
 
     this.presentationTime = (
       Math.max(this.presentationTime, end)
     )
-
-    uiInterface.hideElement(element)
 
     return event
   }

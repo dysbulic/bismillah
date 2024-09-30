@@ -5,8 +5,9 @@ import {
   clearNode,
 } from './compatability.js'
 import {
-  slideshow as show, debug,
+  slideshow as show, debug, verbose,
 } from './control.js'
+import { DocumentInfo } from './Slideshow.js'
 
 /**
  * Represents an interface between a show and the containing page
@@ -16,20 +17,14 @@ export class UIInterface {
     this.container = container
     container.classList.add('loading')
 
-    this.removeElements = true; // either removeChild or set display='none' on hide
+    this.removeElements = false; // either removeChild or set display='none' on hide
     this._unloadedObjects = 0; // number of images requested, but not uploaded
     this.loaded = false
     this.loadEvents = []
-    this.loadingStyle = { border: '2px solid var(--red)' }
-    this.loadedStyle = { 'border-color': 'var(--green)' }
-    this.loadErrorStyle = { 'border-color': 'var(--orange)' }
   }
 
   loadImage(filename) {
     const image = new Image()
-    for(const prop in this.loadingStyle) {
-      setStyleProperty(image, prop, this.loadingStyle[prop])
-    }
     const loadListener = () => {
       this.imageLoaded(image)
     }
@@ -41,40 +36,33 @@ export class UIInterface {
     addListener(image, 'load', loadListener, false)
     addListener(image, 'error', errorListener, false)
     this.incrementObjectCount()
+    image.item = document.createElement('li')
+    image.item.appendChild(image)
+    this.container.appendChild(image.item)
     image.src = filename
 
-    const item = document.createElement('li')
-    item.appendChild(image)
-    this.container.appendChild(item)
-    
     return image
   }
 
   imageLoaded(image) {
-    for(const prop in this.loadedStyle) {
-      setStyleProperty(image, prop, this.loadedStyle[prop])
-    }
+    image.item.classList.add('loaded')
     this.decrementObjectCount()
   }
 
   imageError(image) {
-    for(const prop in this.loadErrorStyle) {
-      setStyleProperty(image, prop, this.loadErrorStyle[prop])
-    }
+    image.item.classList.add('errored')
     this.decrementObjectCount()
   }
 
   loadHTML(filename, info) {
-    var callback = function(doc) {
-      this.ui.loadDocument(doc, this.info)
-      this.ui.decrementObjectCount()
+    var callback = (doc) => {
+      this.loadDocument(doc, info)
+      this.decrementObjectCount()
     }
-    callback.info = info
-    callback.info.element.className = 'markup'
-    callback.ui = this
+    info.element.className = 'markup'
     this.incrementObjectCount()
     loadXMLDocument(filename, callback)
-    return callback.info.element
+    return info.element
   }
 
   loadDocument(loadedDocument, info) {
@@ -86,7 +74,6 @@ export class UIInterface {
         const time = loadedDocument.getElementById(timing.id)
         if(!time) {
           console.error(`Couldn’t Find Id: "#${timing.id}".`)
-          // timings.splice(i, 1)
         } else {
           timing.element = time
         }
@@ -149,24 +136,32 @@ export class UIInterface {
   }
 
   hideElement(info) {
+    let element = info
+    if(element.element) element = element.element
+    if(element.image) element = element.image
+
+    if(debug && verbose) {
+      console.debug({ Hiding: info })
+    }
+
     if(this.removeElements) {
-      if(nodeIsInDocument(info.element)) {
-        info.savedParent = info.element.parentNode
-        info.element.parentNode.removeChild(info.element)
+      if(nodeIsInDocument(element)) {
+        info.savedParent = element.parentNode
+        element.parentNode.removeChild(element)
       }
     } else {
       if(info.savedDisplay == null) {
         if(typeof(window.getComputedStyle) !== 'undefined') {
           info.savedDisplay = (
-            window.getComputedStyle(info.element, null).display
+            window.getComputedStyle(element, null).display
           )
-        } else if(info.element.currentStyle != null) {
-          info.savedDisplay = info.element.currentStyle.display
+        } else if(element.currentStyle != null) {
+          info.savedDisplay = element.currentStyle.display
         } else {
           info.savedDisplay = 'inline'
         }
       }
-      info.element.style.display = 'none'
+      element.style.display = 'none'
     }
     if(info.styleSheets != null) {
       for(const sheet of info.styleSheets) {
@@ -198,9 +193,10 @@ export class UIInterface {
 
   decrementObjectCount() {
     this._unloadedObjects--
+
     if(this._unloadedObjects === 0 && show.loaded) { // config is parsed
       if(debug) {
-        console.debug({ Done: {
+        console.debug({ 'Load Check Satisfied': {
           count: this._unloadedObjects, loaded: show.loaded
         } })
       }
@@ -239,8 +235,7 @@ export class UIInterface {
           console.error(
             'Mixed table and custom layout not supported.'
           )
-        }
-        if(customLayout) {
+        } else if(customLayout) {
           events.push(...this.layoutCustom(slide, holder))
         } else if(slide.length === 1) {
           events.push(...this.layoutSingle(slide, holder))
@@ -248,6 +243,7 @@ export class UIInterface {
           events.push(...this.layoutList(slide, holder))
         }
       }
+
       for(const { image } of slide) {
         if(image) {
           for(const prop in this.loadingStyle) {
@@ -259,7 +255,9 @@ export class UIInterface {
       this.container.appendChild(holder)
 
       events.push(show.addEvent(
-        holder, slide.startTime, slide.endTime,
+        new DocumentInfo({ element: holder }),
+        slide.startTime,
+        slide.endTime,
       ))
     }
 
