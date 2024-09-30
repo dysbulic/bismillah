@@ -7,6 +7,10 @@ export let uiInterface
 export let audioPlayer
 export let slider
 export let timeout = 50 // timeout between updates in milliseconds
+export const debug = (
+  !!window.location.search.substring(1).split(/&/)
+  .find((q) => (q === 'debug'))
+)
 
 export function setup(slideshowConfig, containerName, sliderName, playerName) {
   slider = setupSlider(sliderName)

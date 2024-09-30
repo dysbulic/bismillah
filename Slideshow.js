@@ -1,5 +1,5 @@
 import { addListener, createEvent } from './compatability.js'
-import { uiInterface } from './control.js'
+import { uiInterface, debug } from './control.js'
 
 /**
  * Class used to hold the info about images in a custom layout
@@ -141,7 +141,10 @@ export class Slideshow {
     const slides = await this.extractSlides(xmlDocument)
     this.loaded = true
     const finishLayout = () => {
-      console.debug({ 'Finishing': { slides, stopPoints } })
+      if(debug) {
+        console.debug({ 'Finishing': { slides, stopPoints } })
+      }
+
       this.layout(slides, stopPoints)
     }
     addListener(uiInterface, 'load', finishLayout, false)
@@ -155,7 +158,9 @@ export class Slideshow {
     if(!uiInterface.loaded) {
       throw new Error('UI not loaded in `layout`.')
     }
-    console.debug({ 'Laying Out': { slides, stopPoints } })
+    if(debug) {
+      console.debug({ 'Laying Out': { slides, stopPoints } })
+    }
     if(!this.configured && !this.finishingLayout) {
       this.finishingLayout = true
       this.timeSlides(slides, stopPoints)
@@ -173,7 +178,9 @@ export class Slideshow {
         )
       }
 
-      console.debug({ 'Slideshow Events': this.events })
+      if(debug) {
+        console.debug({ 'Slideshow Events': this.events })
+      }
 
       this.configured = true
       this.finishingLayout = undefined
@@ -312,7 +319,11 @@ export class Slideshow {
       xmlDocument.getElementsByTagName('slide')
     )
 
-    console.debug({ slides: Array.from(slideElements) })
+    if(debug) {
+      console.debug({
+        slides: Array.from(slideElements),
+      })
+    }
 
     const slideProps = ['startTime', 'duration']
     const slides = []
@@ -385,14 +396,18 @@ export class Slideshow {
               }
             }
             
-            console.debug({ 'Loading Loader': script })
+            if(debug) {
+              console.debug({ 'Loading Loader': script })
+            }
 
             const { default: loader } = await import(script)
             objects.loader = loader
             break
           }
           default: {
-            console.error(`Unknown Slide Element: "${child.nodeName}".`)
+            console.error(
+              `Unknown Slide Element: "${child.nodeName}".`
+            )
           }
         }
       }

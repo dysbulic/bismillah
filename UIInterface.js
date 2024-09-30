@@ -2,9 +2,10 @@ import {
   setStyleProperty, addListener,
   loadXMLDocument, createEvent,
   nodeIsInDocument,
+  clearNode,
 } from './compatability.js'
 import { DisplayEvent } from './Slideshow.js'
-import { slideshow, uiInterface } from './control.js'
+import { slideshow, debug } from './control.js'
 
 /**
  * Represents an interface between a Slideshow and the containing page
@@ -197,9 +198,11 @@ export class UIInterface {
   decrementObjectCount() {
     this._unloadedObjects--
     if(this._unloadedObjects === 0 && slideshow.loaded) { // config is parsed
-      console.debug({ Done: {
-        count: this._unloadedObjects, loaded: slideshow.loaded
-      } })
+      if(debug) {
+        console.debug({ Done: {
+          count: this._unloadedObjects, loaded: slideshow.loaded
+        } })
+      }
 
       this.loaded = true
       const event = createEvent('Events')
@@ -211,6 +214,7 @@ export class UIInterface {
   layoutSlide(slide) {
     if(this.container.classList.contains('loading')) {
       this.container.classList.remove('loading')
+      clearNode(this.container)
     }
     let events = []
     if(slide.length > 0) {
@@ -224,18 +228,17 @@ export class UIInterface {
           events = this.layoutHTML(info, element)
         }
       } else { // image slide, no mixed mode slides at this point
-        const customLayout = slide[0].style != null
-        for(const { style } of slide) {
-          if(
-            (customLayout && style == null)
-            || (!customLayout && style != null)
-          ) {
-            // Must all be custom or none
-            console.error(
-              'Mixed table and custom layout'
-              + ' not currently supported.'
-            )
-          }
+        const customLayout = (
+          !!slide.find((e) => (e.style != null))
+        )
+        const stdLayout = (
+          !!slide.find((e) => (e.style == null))
+        )
+        if(customLayout && stdLayout) { // Must all be custom or none
+          console.error(
+            'Mixed table and custom layout'
+            + ' not currently supported.'
+          )
         }
         if(customLayout) {
           events = this.layoutCustomImages(slide, element)
@@ -247,7 +250,7 @@ export class UIInterface {
           }
           element.appendChild(cover)
         } else {
-          events = this.layoutImageTable(slide, element)
+          events = this.layoutImageList(slide, element)
         }
       }
       for(const { image } of slide) {
@@ -300,9 +303,9 @@ export class UIInterface {
   }
 
   /**
-   * Take a slide and put the elements in a css table
+   * Take a slide and put the elements in a CSS list.
    */
-  layoutImageTable(slide, holder) {
+  layoutImageList(slide, holder) {
     const events = []
     holder.className = 'multi'
     let col = undefined
@@ -310,8 +313,10 @@ export class UIInterface {
     for(let index = 0; index < slide.length; index++) {
       const info = slide[index]
       if(index === 0 || index === switchIndex) {
-        col = document.createElement('div')
-        const classList = [`${(index == 0 ? 'left' : 'right')}col`]
+        col = document.createElement('ol')
+        const classList = ([
+          index === 0 ? 'left' : 'right', 'column',
+        ])
         if(index == 0) {
           classList.push(`elm-${switchIndex}`)
         } else {
@@ -320,20 +325,14 @@ export class UIInterface {
         col.classList.add(...classList)
         holder.appendChild(col)
       }
-      info.element = document.createElement('div')
-      info.element.className = 'innertable'
+      info.element = document.createElement('li')
       col?.appendChild(info.element)
-      if(typeof(slide[index]) !== 'undefined') {
-        const loading = document.createElement('ol')
-        loading.className = 'loading'
-        info.element.appendChild(loading)
+      if(info != null) {
         if(nodeIsInDocument(info.image)) {
           info.image.parentNode
           .removeChild(info.image)
         }
-        const item = document.createElement('li')
-        item.appendChild(info.image)
-        loading.appendChild(item)
+        info.element.appendChild(info.image)
         events.push(new DisplayEvent(
           info, info.startTime, info.endTime,
         ))
@@ -376,7 +375,7 @@ export class UIInterface {
     }
     let listeners = listener ? [listener] : this.loadListeners
     if(!listeners) {
-      console.warn('No `load` listeners.')
+      if(debug) console.warn('No `load` listeners.')
     } else {
       for(const listener of listeners) {
         listener.call(listener, event)
