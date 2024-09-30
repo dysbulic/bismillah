@@ -12,19 +12,15 @@ import { slideshow, uiInterface } from './control.js'
 export class UIInterface {
   constructor(container) {
     this.container = container
-    container.tempImageHolder = document.createElement('div')
-    container.tempImageHolder.className = 'tablecell'
-    container.appendChild(container.tempImageHolder)
+    container.classList.add('loading')
 
     this.removeElements = true; // either removeChild or set display='none' on hide
     this._unloadedObjects = 0; // number of images requested, but not uploaded
     this.loaded = false
-    this.loadEvents = new Array()
-    this.loadingStyle = {}
-    this.loadingStyle.border = '2px solid red'
-    this.loadingStyle.width = this.loadingStyle.height = '40px'
-    this.loadedStyle = { 'border-color': 'green' }
-    this.loadErrorStyle = { 'border-color': 'orange' }
+    this.loadEvents = []
+    this.loadingStyle = { border: '2px solid var(--red)' }
+    this.loadedStyle = { 'border-color': 'var(--green)' }
+    this.loadErrorStyle = { 'border-color': 'var(--orange)' }
   }
 
   loadImage(filename) {
@@ -33,10 +29,10 @@ export class UIInterface {
       setStyleProperty(image, prop, this.loadingStyle[prop])
     }
     const loadListener = () => {
-      uiInterface.imageLoaded(image)
+      this.imageLoaded(image)
     }
     const errorListener = () => {
-      uiInterface.imageError(this.error)
+      this.imageError(this.error)
     }
     loadListener.image = errorListener.image = image
     loadListener.ui = errorListener.ui = this
@@ -44,7 +40,11 @@ export class UIInterface {
     addListener(image, 'error', errorListener, false)
     this.incrementObjectCount()
     image.src = filename
-    this.container.tempImageHolder.appendChild(image)
+
+    const item = document.createElement('li')
+    item.appendChild(image)
+    this.container.appendChild(item)
+    
     return image
   }
 
@@ -68,7 +68,7 @@ export class UIInterface {
       this.ui.decrementObjectCount()
     }
     callback.info = info
-    callback.info.element.className = 'htmlholder'
+    callback.info.element.className = 'markup'
     callback.ui = this
     this.incrementObjectCount()
     loadXMLDocument(filename, callback)
@@ -83,7 +83,7 @@ export class UIInterface {
       for(const timing of timings) {
         const time = loadedDocument.getElementById(timing.id)
         if(!time) {
-          console.error(`Couldn’t find: ${timing.id}`)
+          console.error(`Couldn’t Find Id: "#${timing.id}".`)
           // timings.splice(i, 1)
         } else {
           timing.element = time
@@ -124,14 +124,7 @@ export class UIInterface {
         while(head.hasChildNodes()) {
           const child = head.firstChild
           head.removeChild(child)
-          if(
-            child.nodeType == Node.ELEMENT_NODE
-            && (
-              ['style', 'link'].includes(
-                child.nodeName.toLowerCase()
-              )
-            )
-          ) {
+          if(child.nodeType == Node.ELEMENT_NODE) {
             try {
               dochead?.appendChild(child)
               child.disabled = true
@@ -145,7 +138,7 @@ export class UIInterface {
                 )
               )
             }
-            info.styleSheets ??= new Array()
+            info.styleSheets ??= []
             info.styleSheets.push(child)
           }
         }
@@ -216,17 +209,18 @@ export class UIInterface {
   }
 
   layoutSlide(slide) {
-    if(nodeIsInDocument(this.container.tempImageHolder)) {
-      this.container.removeChild(this.container.tempImageHolder)
+    if(this.container.classList.contains('loading')) {
+      this.container.classList.remove('loading')
     }
-    let events = new Array()
+    let events = []
     if(slide.length > 0) {
-      const element = document.createElement('div')
+      const element = document.createElement('li')
+
       if(slide.loader) {
         events = slide.loader.call(this, slide, element)
       } else if(slide.type == 'document') {
         for(const info of slide) {
-          element.classList.add('tablecell', 'single')
+          element.classList.add('single')
           events = this.layoutHTML(info, element)
         }
       } else { // image slide, no mixed mode slides at this point
@@ -246,11 +240,12 @@ export class UIInterface {
         if(customLayout) {
           events = this.layoutCustomImages(slide, element)
         } else if(slide.length === 1) {
-          element.classList.add('tablecell', 'single')
-          if(nodeIsInDocument(slide[0].image)) {
-            slide[0].image.parentNode.removeChild(slide[0].image)
+          element.classList.add('single')
+          const [{ image: cover }] = slide
+          if(nodeIsInDocument(cover)) {
+            cover.parentNode.removeChild(cover)
           }
-          element.appendChild(slide[0].image)
+          element.appendChild(cover)
         } else {
           events = this.layoutImageTable(slide, element)
         }
@@ -276,11 +271,11 @@ export class UIInterface {
    * Take a slide and lay the elements out in a customlayout div
    */
   layoutCustomImages(slide, holder) {
-    const events = new Array()
-    holder.className = 'customlayout'
+    const events = []
+    holder.className = 'layout'
     for(const info of slide) {
       info.element = document.createElement('div')
-      info.element.className = 'customelm'
+      info.element.className = 'custom'
       try {
         holder.appendChild(info.element)
       } catch(e) {
@@ -308,8 +303,8 @@ export class UIInterface {
    * Take a slide and put the elements in a css table
    */
   layoutImageTable(slide, holder) {
-    const events = new Array()
-    holder.className = 'multipics'
+    const events = []
+    holder.className = 'multi'
     let col = undefined
     const switchIndex = Math.floor(slide.length / 2)
     for(let index = 0; index < slide.length; index++) {
@@ -329,19 +324,18 @@ export class UIInterface {
       info.element.className = 'innertable'
       col?.appendChild(info.element)
       if(typeof(slide[index]) !== 'undefined') {
-        const tablecell = document.createElement('div')
-        tablecell.className = 'tablecell'
-        info.element.appendChild(tablecell)
-        if(nodeIsInDocument(slide[index].image)) {
-          slide[index].image
-          .parentNode
-          .removeChild(slide[index].image)
+        const loading = document.createElement('ol')
+        loading.className = 'loading'
+        info.element.appendChild(loading)
+        if(nodeIsInDocument(info.image)) {
+          info.image.parentNode
+          .removeChild(info.image)
         }
-        tablecell.appendChild(slide[index].image)
+        const item = document.createElement('li')
+        item.appendChild(info.image)
+        loading.appendChild(item)
         events.push(new DisplayEvent(
-          info,
-          slide[index].startTime,
-          slide[index].endTime,
+          info, info.startTime, info.endTime,
         ))
       }
     }
@@ -349,7 +343,7 @@ export class UIInterface {
   }
 
   layoutHTML(info, holder) {
-    const events = new Array()
+    const events = []
     holder.appendChild(info.element)
     events.push(new DisplayEvent(
       info, info.startTime, info.endTime,
@@ -366,7 +360,7 @@ export class UIInterface {
     if(type !== 'load') {
       throw new Error(`Unknown Event Type: "${type}".`)
     }
-    this.loadListeners ??= new Array()
+    this.loadListeners ??= []
     this.loadListeners.push(listener)
     this.loadEvents.forEach((e) => ( // load events fired before registration
       this.dispatchEvent(e, listener)
@@ -382,7 +376,7 @@ export class UIInterface {
     }
     let listeners = listener ? [listener] : this.loadListeners
     if(!listeners) {
-      console.debug('No `load` listeners.')
+      console.warn('No `load` listeners.')
     } else {
       for(const listener of listeners) {
         listener.call(listener, event)

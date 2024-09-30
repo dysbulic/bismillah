@@ -3,35 +3,60 @@
   <head>
     <title>Volunteers Intro Page</title>
     <style type="text/css">
-      html, body {
-        height: 100%;
-        background-color: black;
-        color: red;
+      @keyframes rainbow {
+        from { background-position: 0% }
+        to { background-position: 100% }
       }
       h1 {
-        font-style: italic;
-        font-size: 35pt;
-        font-weight: normal;
-        margin-top: 10%;
-      }
-      .greeting {
-        position: absolute;
-        width: 10em;
-        margin-left: -5em;
+        background-clip: text;
+        color: #0000;
         text-align: center;
-        font-size: 25pt;
+        font-style: italic;
+        font-size: clamp(3rem, 12svh, 6rem);
+        font-weight: normal;
+        margin-top: 10svh;
+        background-image: linear-gradient(
+          to right,
+          var(--red),
+          var(--orange),
+          var(--yellow),
+          var(--green),
+          var(--blue),
+          var(--indigo),
+          var(--violet),
+          var(--indigo),
+          var(--blue),
+          var(--green),
+          var(--yellow),
+          var(--orange)
+        );
+        background-size: 200%;
+        animation: rainbow 2s linear infinite;
+      }
+      #greetings {
+        list-style: none;
+        position: relative;
+        height: 75svh;
+      }
+      #greetings > li {
+        position: absolute;
+        color: var(--accent);
+        font-size: clamp(2rem, 7svh, 5rem);
+        width: 14ch;
         font-weight: bold;
+        text-align: center;
       }
     </style>
   </head>
   <body>
-    <h1 style="text-align: center">Peace Corps Mauritania 2003-05</h1>
-    <div style="position: relative; height: 75%">
-      <div id="french" class="greeting" style="top: 10%; left: 23%">Bonjour</div>
-      <div id="wolof" class="greeting" style="top: 25%; left: 36%">Nanga Def</div>
-      <div id="hassaniya" class="greeting" style="top: 40%; left: 49%">Iyaak Labaas</div>
-      <div id="sonike" class="greeting" style="top: 55%; left: 62%">An Moxo</div>
-      <div id="pulaar" class="greeting" style="top: 70%; left: 75%">No M'Bad-da</div>
-    </div>
+    <h1>Peace Corps Mauritania 2003-05</h1>
+    <ul id="greetings">
+      <li id="french" style="top: 10%; left: 0%">Bonjour</li>
+      <li id="wolof" style="top: 20%; left: 13%">Nanga Def</li>
+      <li id="hassaniya" style="top: 30%; left: 26%">Iyaak Labaas</li>
+      <li id="sonike" style="top: 40%; left: 39%">An Moxo</li>
+      <li id="pulaar" style="top: 50%; left: 52%">No M’Bad-da</li>
+      <li id="english" style="top: 60%; left: 65%">Howdy</li>
+    </ul>
   </body>
 </html>

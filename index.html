@@ -9,7 +9,7 @@
     <script type="module">
       import { setup } from './control.js'
       document.addEventListener('DOMContentLoaded', () => {
-        setup('bismillah.xml', 'holder', 'slider', 'player')
+        setup('bismillah.xml', 'content', 'slider', 'music')
       })
     </script>
   </head>
@@ -18,12 +18,10 @@
       <section id="slider"></section>
     </aside>
     <main id="display">
-      <section id="pictures"><div id="holder"></div></section>
-      <section id="music">
-        <audio id="player" controls>
-          <source src="Black Eyed Peas - Let's Get Retarded.m4a"/>
-        </audio>
-      </section>
+      <ol id="content"></ol>
+      <audio id="music" controls>
+        <source src="Black Eyed Peas - Let's Get Retarded.m4a"/>
+      </audio>
     </main>
   </body>
 </html>

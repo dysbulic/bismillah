@@ -94,8 +94,8 @@ function step() {
 function setupContainer(containerName) {
   const container = document.getElementById(containerName)
   if(!container) throw new Error('Container not found.')
-  container.startLink = document.createElement('div')
-  container.startLink.className = 'tablecell'
+  container.startLink = document.createElement('aside')
+  container.startLink.id = 'start'
   const link = document.createElement('button')
   link.setAttribute('onclick', 'startShow()')
   link.appendChild(document.createTextNode('Start Slideshow'))

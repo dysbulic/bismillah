@@ -5,18 +5,17 @@ import { uiInterface } from './control.js'
  * Class used to hold the info about images in a custom layout
  */
 export class ImageInfo {
-  constructor(image, styleParam) {
+  constructor(image, style) {
     this.image = image
-    if(styleParam) {
-      this.style = new Array()
-      const styleElements = styleParam.trim().split(/\s+/)
+    if(style) {
+      this.style ??= []
+      const styleElements = style.trim().split(/\s+/)
       for(const styleElem of styleElements) {
-        const [key, ...val] = styleElem.split(/\s*:\s*/)
+        const [key, ...val] = styleElem.split(/\s*?:\s*/)
         this.style[key] = val
       }
     }
-    this.startTime = undefined
-    this.endTime = undefined
+    this.startTime = this.endTime = null
   }
 
   toString() {
@@ -25,17 +24,15 @@ export class ImageInfo {
 }
 
 export class DocumentInfo {
-  constructor() {
-    this.element = document.createElement('div')
-    this.timings = new Array()
+  constructor(root = 'div') {
+    this.element = document.createElement(root)
+    this.timings = []
   }
 }
 
 export class DisplayEvent {
-  constructor(element, startTime, endTime) {
-    this.element = element
-    this.startTime = startTime
-    this.endTime = endTime
+  constructor({ element, start: startTime, end: endTime }) {
+    Object.assign(this, { element, startTime, endTime })
     this.active = false
   }
 }
@@ -48,42 +45,38 @@ EventsArray.prototype = new Array()
 /**
  * Last event starting at of before 'time'
  */
-// Array Subclassing is not working in IE6
 //EventsArray.prototype.indexOfLastEventAt = function(time) {
 export function indexOfLastEventAt(time) {
-  let index = undefined
   if(this.length > 0) {
     /* My binary version of this search was buggy so this is simple linear */
-    index = 0
+    let index = 0
     while(index < this.length && this[index].startTime <= time) {
       index++
     }
     /* The loop will overshoot by 1, so if it is 0, it didn't find any */
     if(index === 0) {
-      index = undefined
+      return undefined
     } else {
-      index--
+      return --index
     }
   }
-  return index
 }
 
 export class Slideshow {
   constructor() {
     this.configured = false // if the slideshow is ready to start
     this.loaded = false     // if the data files have been loaded
-    this.events = new EventsArray()
-    this.events = new Array()
+    this.events = new EventsArray() // Needs prototype to work
+    this.events = []
     this.events.indexOfLastEventAt = indexOfLastEventAt
     this.presentationTime = 0 /* running time for the presentation */
-    this.startTime = 0 /* time the show was started */
-    this.lastSeekTime = undefined
+    this.startTime = null /* time the show was started */
+    this.lastSeekTime = 0 // last time seeked to; initially the start
     this.playing = false
-    this.activeEvents = new Array() /* currently visible events */
-    this.stopIndex = undefined // Index in the events array of the latest active event
+    this.activeEvents = [] /* currently visible events */
+    this.stopIndex = null // Index in the events array of the latest active
   }
 
-  // IE lacks getters and setters completely, so this can't be pretty
   get currentTime() {
     return new Date().getTime() - this.startTime
   }
@@ -103,8 +96,8 @@ export class Slideshow {
     while(this.activeEvents.length > 0) {
       this.activeEvents.pop().active = false
     }
-    for(const i = 0; i < this.events.length; i++) {
-      uiInterface.hideElement(this.events[i].element)
+    for(const { element: root } of this.events) {
+      uiInterface.hideElement(root)
     }
   }
 
@@ -179,7 +172,9 @@ export class Slideshow {
           this.presentationTime, event.endTime,
         )
       }
-      console.debug({ ev: this.events })
+
+      console.debug({ 'Slideshow Events': this.events })
+
       this.configured = true
       this.finishingLayout = undefined
 
@@ -288,7 +283,7 @@ export class Slideshow {
     const stopPointLists = (
       xmlDocument.getElementsByTagName('stopPointList')
     )
-    const stopPoints = new Array()
+    const stopPoints = []
     for(const list of Array.from(stopPointLists)) {
       for(const child of Array.from(list.childNodes)) {
         if(child.nodeType === Node.TEXT_NODE) {
@@ -320,9 +315,9 @@ export class Slideshow {
     console.debug({ slides: Array.from(slideElements) })
 
     const slideProps = ['startTime', 'duration']
-    const slides = new Array()
+    const slides = []
     for(const slide of Array.from(slideElements)) {
-      const objects = new Array()
+      const objects = []
       for(const prop of slideProps) {
         let attr = slide.getAttribute(prop)
         if(/^\d+$/.test(attr)) attr = Number(attr)
@@ -390,7 +385,7 @@ export class Slideshow {
               }
             }
             
-            console.debug(`Loading Loader: "${script}".`)
+            console.debug({ 'Loading Loader': script })
 
             const { default: loader } = await import(script)
             objects.loader = loader
@@ -410,7 +405,7 @@ export class Slideshow {
     if(type !== 'configure') {
       throw new Error(`Unknown Event Type: "${type}".`)
     }
-    this.configureListeners ??= new Array()
+    this.configureListeners ??= []
     this.configureListeners.push(listener)
   }
 

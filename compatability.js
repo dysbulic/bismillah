@@ -211,7 +211,7 @@ export function getForm(submission) {
  * Print in dialogs the properties an object has
  */
 export function printProperties(element, skipConstants) {
-  const lists = new Array()
+  const lists = []
   for(let property in element) {
     if(skipConstants && property.match(/^[A-Z_0-9]*$/)) continue
 
@@ -386,7 +386,7 @@ export function selectNodes(document, xpath, namespaceID, namespace) {
 }
 
 export function getCookie() {
-  const values = new Array()
+  const values = []
   const cookieParts = document.cookie.split(/ +/g)
   for(const part of cookieParts) {
     const equalsIndex = part.indexOf('=')

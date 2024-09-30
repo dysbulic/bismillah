@@ -5,7 +5,7 @@ import { DisplayEvent } from './Slideshow.js'
 
 
 export default function layout(slide, holder) {
-  const events = new Array()
+  const events = []
   holder.className = 'customlayout'
 
   const duration = slide.endTime - slide.startTime
@@ -15,8 +15,8 @@ export default function layout(slide, holder) {
     (2 * (duration - startDelay) / 3) / slide.length
   )
 
-  const orderIndexes = new Array()
-  const picIndexes = new Array()
+  const orderIndexes = []
+  const picIndexes = []
   for(let i = slide.length - 1; i >= 0; i--) {
     orderIndexes.push(i + 1)
     picIndexes.push(i)
