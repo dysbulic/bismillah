@@ -2,7 +2,7 @@ import {
   setStyleProperty, nodeIsInDocument,
 } from './compatability.js'
 import { DisplayEvent } from './Slideshow.js'
-
+import { slideshow } from './control.js'
 
 export default function layout(slide, holder) {
   const events = []
@@ -84,7 +84,7 @@ export default function layout(slide, holder) {
       info.element.parentNode.removeChild(info.element)
     }
     holder.appendChild(info.element)
-    events.push(new DisplayEvent(
+    events.push(slideshow.addEvent(
       info,
       slide.startTime + startDelay + picDelay * (i + 1),
       slide.endTime,

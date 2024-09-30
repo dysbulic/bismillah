@@ -68,14 +68,13 @@ export function addListener(element, event, listener, bubble) {
 /**
  * Remove an event listener from a component
  */
-export function removeListener(element, event, listener, bubble) {
+export function removeListener(element, event, listener, bubble = false) {
   if(element.removeEventListener) {
-    if(typeof(bubble) == 'undefined') bubble = false
     element.removeEventListener(event, listener, bubble)
   } else if(this.detachEvent) {
-    element.detachEvent('on' + event, listener)
+    element.detachEvent(`on${event}`, listener)
   } else {
-    console.error(`Could not remove ${event} listener.`)
+    console.error(`Could not remove \`${event}\` listener.`)
   }
 }
 
@@ -332,7 +331,7 @@ export async function loadXMLDocument(url, callback) {
   const res = await fetch(url)
   const text = await res.text()
   const doc = new DOMParser().parseFromString(text, 'text/xml')
-  callback.call(callback, doc)
+  callback?.call(callback, doc)
   return doc
 }
 

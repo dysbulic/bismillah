@@ -12,19 +12,17 @@ export const debug = (
   .find((q) => (q === 'debug'))
 )
 
-export function setup(slideshowConfig, containerName, sliderName, playerName) {
+export async function setup(slideshowConfig, containerName, sliderName, playerName) {
   slider = setupSlider(sliderName)
   uiInterface = new UIInterface(setupContainer(containerName))
   audioPlayer = setupPlayer(playerName)
   addListener(slideshow, 'configure', showConfigured, true)
-  loadXMLDocument(slideshowConfig, loadSlideshow)
-}
 
-function loadSlideshow(config) {
+  const config = await loadXMLDocument(slideshowConfig)
   slideshow.load(config, uiInterface)
 }
 
-function showConfigured(event) {
+function showConfigured() {
   if(audioPlayer == null || audioPlayer.loaded) {
     resetShow()
   }
@@ -139,20 +137,25 @@ function sliderSelected(event) {
 }
 
 function sliderDrag(event) {
-  const position = (
-    event.clientY - Math.round(slider.clientHeight / 2)
-  )
+  const { presentationTime: total } = slideshow
+  if(isNaN(total) || total < 0) {
+    throw new Error(`Invalid \`presentationTime\`: ${total}`)
+  }
+  const center = Math.round(slider.clientHeight / 2)
+  const position = event.clientY - center
   if(
-    position > barStart
-    && position < barLength - slider.clientHeight
+    position > barStart // after the start
+    && position < barLength - slider.clientHeight // before the end
   ) {
-    slider.style.top = (
-      `${event.clientY - Math.round(slider.clientHeight / 2)}px`
-    )
-    const time = Math.round(
-      slideshow.presentationTime * position / barLength
-    )
-    slideshow.seekToTime(time)
+    slider.style.top = `${position}px`
+
+    const time = Math.round(total * position / barLength)
+    if(debug) {
+      console.debug({
+        'Seeking': { total, position, barLength, time }
+      })
+    }
+    slideshow.currentTime = time
     if(audioPlayer) {
       audioPlayer.currentTime = time
     }
@@ -166,5 +169,9 @@ function sliderRelease() {
 }
 
 function setupPlayer(playerName) {
-  return document.getElementById(playerName)
+  const player = document.getElementById(playerName)
+  player.addEventListener('timeupdate', (event) => {
+    slideshow.currentTime = event.timeStamp
+  })
+  return player
 }

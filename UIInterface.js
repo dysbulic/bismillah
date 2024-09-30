@@ -4,11 +4,12 @@ import {
   nodeIsInDocument,
   clearNode,
 } from './compatability.js'
-import { DisplayEvent } from './Slideshow.js'
-import { slideshow, debug } from './control.js'
+import {
+  slideshow as show, debug,
+} from './control.js'
 
 /**
- * Represents an interface between a Slideshow and the containing page
+ * Represents an interface between a show and the containing page
  */
 export class UIInterface {
   constructor(container) {
@@ -197,10 +198,10 @@ export class UIInterface {
 
   decrementObjectCount() {
     this._unloadedObjects--
-    if(this._unloadedObjects === 0 && slideshow.loaded) { // config is parsed
+    if(this._unloadedObjects === 0 && show.loaded) { // config is parsed
       if(debug) {
         console.debug({ Done: {
-          count: this._unloadedObjects, loaded: slideshow.loaded
+          count: this._unloadedObjects, loaded: show.loaded
         } })
       }
 
@@ -218,14 +219,14 @@ export class UIInterface {
     }
     let events = []
     if(slide.length > 0) {
-      const element = document.createElement('li')
+      const holder = document.createElement('li')
 
       if(slide.loader) {
-        events = slide.loader.call(this, slide, element)
+        events = slide.loader.call(this, slide, holder)
       } else if(slide.type == 'document') {
+        holder.classList.add('single')
         for(const info of slide) {
-          element.classList.add('single')
-          events = this.layoutHTML(info, element)
+          events.push(...this.layoutHTML(info, holder))
         }
       } else { // image slide, no mixed mode slides at this point
         const customLayout = (
@@ -236,21 +237,15 @@ export class UIInterface {
         )
         if(customLayout && stdLayout) { // Must all be custom or none
           console.error(
-            'Mixed table and custom layout'
-            + ' not currently supported.'
+            'Mixed table and custom layout not supported.'
           )
         }
         if(customLayout) {
-          events = this.layoutCustomImages(slide, element)
+          events.push(...this.layoutCustom(slide, holder))
         } else if(slide.length === 1) {
-          element.classList.add('single')
-          const [{ image: cover }] = slide
-          if(nodeIsInDocument(cover)) {
-            cover.parentNode.removeChild(cover)
-          }
-          element.appendChild(cover)
+          events.push(...this.layoutSingle(slide, holder))
         } else {
-          events = this.layoutImageList(slide, element)
+          events.push(...this.layoutList(slide, holder))
         }
       }
       for(const { image } of slide) {
@@ -260,20 +255,35 @@ export class UIInterface {
           }
         }
       }
-      this.container.appendChild(element)
-      events.push(
-        new DisplayEvent(
-          { element }, slide.startTime, slide.endTime
-        )
-      )
+
+      this.container.appendChild(holder)
+
+      events.push(show.addEvent(
+        holder, slide.startTime, slide.endTime,
+      ))
     }
+
     return events
   }
 
   /**
-   * Take a slide and lay the elements out in a customlayout div
+   * Lay out a singlular element.
    */
-  layoutCustomImages(slide, holder) {
+  layoutSingle(slide, holder) {
+    holder.classList.add('single')
+    const [{ image: cover }] = slide
+    if(nodeIsInDocument(cover)) {
+      cover.parentNode.removeChild(cover)
+    }
+    holder.appendChild(cover)
+    return []
+  }
+
+
+  /**
+   * Take a slide and lay the elements out in a `.custom` `<div>`.
+   */
+  layoutCustom(slide, holder) {
     const events = []
     holder.className = 'layout'
     for(const info of slide) {
@@ -295,9 +305,7 @@ export class UIInterface {
         info.image.parentNode.removeChild(info.image)
       }
       info.element.appendChild(info.image)
-      events.push(new DisplayEvent(
-        info, info.startTime, info.endTime,
-      ))
+      events.push(show.addEvent(info))
     }
     return events
   }
@@ -305,7 +313,7 @@ export class UIInterface {
   /**
    * Take a slide and put the elements in a CSS list.
    */
-  layoutImageList(slide, holder) {
+  layoutList(slide, holder) {
     const events = []
     holder.className = 'multi'
     let col = undefined
@@ -333,9 +341,7 @@ export class UIInterface {
           .removeChild(info.image)
         }
         info.element.appendChild(info.image)
-        events.push(new DisplayEvent(
-          info, info.startTime, info.endTime,
-        ))
+        events.push(show.addEvent(info))
       }
     }
     return events
@@ -344,14 +350,10 @@ export class UIInterface {
   layoutHTML(info, holder) {
     const events = []
     holder.appendChild(info.element)
-    events.push(new DisplayEvent(
-      info, info.startTime, info.endTime,
-    ))
-    for(const timing of info.timings) {
-      events.push(new DisplayEvent(
-        timing, timing.startTime, timing.endTime,
-      ))
-    }
+    events.push(show.addEvent(info))
+    events.push(
+      ...info.timings.map((t) => show.addEvent(t))
+    )
     return events
   }
 

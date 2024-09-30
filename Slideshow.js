@@ -32,6 +32,9 @@ export class DocumentInfo {
 
 export class DisplayEvent {
   constructor({ element, start: startTime, end: endTime }) {
+    if(!element) throw new Error('Missing `element`.')
+    if(startTime == null) startTime = element.startTime
+    if(endTime == null) endTime = element.endTime
     Object.assign(this, { element, startTime, endTime })
     this.active = false
   }
@@ -45,8 +48,8 @@ EventsArray.prototype = new Array()
 /**
  * Last event starting at of before 'time'
  */
-//EventsArray.prototype.indexOfLastEventAt = function(time) {
-export function indexOfLastEventAt(time) {
+// export function indexOfLastAt(time) {
+EventsArray.prototype.indexOfLastAt = function(time) {
   if(this.length > 0) {
     /* My binary version of this search was buggy so this is simple linear */
     let index = 0
@@ -67,8 +70,8 @@ export class Slideshow {
     this.configured = false // if the slideshow is ready to start
     this.loaded = false     // if the data files have been loaded
     this.events = new EventsArray() // Needs prototype to work
-    this.events = []
-    this.events.indexOfLastEventAt = indexOfLastEventAt
+    // this.events = []
+    // this.events.indexOfLastAt = indexOfLastAt
     this.presentationTime = 0 /* running time for the presentation */
     this.startTime = null /* time the show was started */
     this.lastSeekTime = 0 // last time seeked to; initially the start
@@ -79,6 +82,37 @@ export class Slideshow {
 
   get currentTime() {
     return new Date().getTime() - this.startTime
+  }
+
+  set currentTime(time) {
+    const index = this.stopIndex = (
+      this.events.indexOfLastAt(time)
+    )
+    const { activeEvents: active } = this
+    for(const i = active.length - 1; i >= 0; i--) {
+      const event = active[i]
+      if(
+        event.startTime > time
+        || event.endTime <= time
+      ) {
+        uiInterface.hideElement(event.element)
+        event.active = false
+        this.activeEvents = active.filter((evt) => (
+          evt !== event
+        ))
+      }
+    }
+    if(index != null) {
+      for(; index >= 0; index--) {
+        const event = this.events[index]
+        if(event.endTime > time && !event.active) {
+          event.active = true
+          uiInterface.showElement(event.element)
+          this.activeEvents.push(event)
+        }
+      }
+    }
+    this.lastSeekTime = time
   }
 
   start() {
@@ -101,40 +135,14 @@ export class Slideshow {
     }
   }
 
-  seekToTime(time) {
-    const index = this.stopIndex = (
-      this.events.indexOfLastEventAt(time)
-    )
-    for(const i = this.activeEvents.length - 1; i >= 0; i--) {
-      if(this.activeEvents[i].startTime > time
-        || this.activeEvents[i].endTime <= time) {
-        uiInterface.hideElement(this.activeEvents[i].element)
-        this.activeEvents[i].active = false
-        this.activeEvents.splice(i, 1)
-      }
-    }
-    if(index != null) {
-      for(; index >= 0; index--) {
-        if(
-          this.events[index].endTime > time
-          && !this.events[index].active
-        ) {
-          this.events[index].active = true
-          uiInterface.showElement(this.events[index].element)
-          this.activeEvents.push(this.events[index])
-        }
-      }
-    }
-    this.lastSeekTime = time
-  }
-
   async load(
     xmlDocument, // DOM configuration
     uiInterface, // object with UI interface functions
   ) {
     this.uiInterface = uiInterface
     this.backgroundMusic = (
-      xmlDocument.documentElement.getAttribute('backgroundMusic')
+      xmlDocument.documentElement
+      .getAttribute('backgroundMusic')
     )
 
     const stopPoints = this.extractStopPoints(xmlDocument)
@@ -142,7 +150,9 @@ export class Slideshow {
     this.loaded = true
     const finishLayout = () => {
       if(debug) {
-        console.debug({ 'Finishing': { slides, stopPoints } })
+        console.debug({
+          'Finishing': { slides, stopPoints },
+        })
       }
 
       this.layout(slides, stopPoints)
@@ -158,12 +168,10 @@ export class Slideshow {
     if(!uiInterface.loaded) {
       throw new Error('UI not loaded in `layout`.')
     }
-    if(debug) {
-      console.debug({ 'Laying Out': { slides, stopPoints } })
-    }
     if(!this.configured && !this.finishingLayout) {
       this.finishingLayout = true
       this.timeSlides(slides, stopPoints)
+
       for(const slide of Array.from(slides)) {
         const slideEvents = uiInterface.layoutSlide(slide)
         //this.events = this.events.concat(slideEvents) // Adding a mystery element
@@ -171,15 +179,20 @@ export class Slideshow {
           this.events.push(slideEvents.pop())
         }
       }
-      this.events.sort((a, b) => (b.startTime - a.startTime))
-      for(const event of this.events) {
-        this.presentationTime = Math.max(
-          this.presentationTime, event.endTime,
-        )
+      this.events.sort((a, b) => (a.startTime - b.startTime))
+
+      if(debug) {
+        console.debug({
+          'Laying Out': {
+            events: this.events, slides, stopPoints,
+          },
+        })
       }
 
       if(debug) {
-        console.debug({ 'Slideshow Events': this.events })
+        console.debug({ 'Slideshow Events': {
+          events: this.events, totalTime: this.presentationTime
+        } })
       }
 
       this.configured = true
@@ -201,66 +214,67 @@ export class Slideshow {
   timeSlides(slides, stopPoints) {
     let currentStopIndex = -1
 
-    const setSlideStartTime = (element, startTime) => {
-      if(startTime == null) {
-        startTime = element.startTime
-      }
-      if(startTime != null) {
-        if(startTime === 'none') {
-          // start time will be handled by the loader
-        } else if(
-          typeof(startTime) === 'string'
-          && startTime.includes('+')
-        ) { // relative offset
-          const offset = (
-            Number(startTime.substring(startTime.indexOf('+') + 1))
-          )
-          // The first slide cannot have a relative offset
-          if(currentStopIndex < 0) {
-            currentStopIndex = 0
-          }
-          try {
-            element.startTime = (
-              stopPoints[currentStopIndex] + offset
+    const setSlideStartTime = (
+      (element, startTime = null) => {
+        if(startTime == null) {
+          startTime = element.startTime
+        }
+        if(startTime != null) {
+          if(startTime === 'none') {
+            // start will be handled by the loader
+          } else if(
+            typeof(startTime) !== 'string'
+            || !startTime.includes('+')
+          ) { // non-relative offset
+            element.startTime = Number(element.startTime)
+          } else { // relative offset
+            const offset = (
+              Number(startTime.substring(startTime.indexOf('+') + 1))
             )
-          } catch(e) {
-            console.error(
-              'Error Setting Start Time:'
-              + ` ${e.message}:${element.nodeName}`
-            )
+            if(currentStopIndex < 0) {
+              currentStopIndex = 0 // first slide can’t have a relative offset
+            }
+            try {
+              element.startTime = (
+                stopPoints[currentStopIndex] + offset
+              )
+            } catch(e) {
+              console.error(
+                'Error Setting Start Time:'
+                + ` ${e.message}:${element.nodeName}`
+              )
+            }
           }
         } else {
-          element.startTime = Number(element.startTime)
+          if(currentStopIndex >= stopPoints.length) {
+            console.error({
+              'Too Few Stop Points': stopPoints
+            })
+          }
+          element.startTime = stopPoints[++currentStopIndex]
         }
-      } else {
-        if(currentStopIndex >= stopPoints.length) {
-          console.error(
-            `Too Few Stop Points: ${stopPoints.length}`
-          )
-        }
-        element.startTime = stopPoints[++currentStopIndex]
       }
-    }
+    )
 
     for(const slide of slides) {
       setSlideStartTime(slide)
-      for(let elemIndex = 0; elemIndex < slide.length; elemIndex++) {
-        const element = slide[elemIndex]
+
+      for(let i = 0; i < slide.length; i++) {
+        const info = slide[i]
         /* The first element should display as the slide opens
         *  unless it has an explicit offset specified
         */
-        if(elemIndex == 0 && element.startTime == null) {
-          setSlideStartTime(element, '+0')
+        if(i == 0 && info.startTime == null) {
+          setSlideStartTime(info, '+0')
         } else {
-          setSlideStartTime(element, element.startTime)
+          setSlideStartTime(info)
         }
-        if(slide.type == 'html') {
-          const { timings } = element
-          for(const timing of timings) {
-            setSlideStartTime(timing, timing.startTime)
-          }
+        const { timings = [] } = info
+        for(const timing of timings) {
+          setSlideStartTime(timing)
         }
       }
+
       let endTime = stopPoints[currentStopIndex + 1]
       if(slide.duration != null) {
         endTime = slide.startTime + slide.duration
@@ -269,15 +283,14 @@ export class Slideshow {
 
       for(const info of slide) {
         info.endTime = endTime
-
-        if(slide.type == 'html') {
-          const { timings } = info
-          for(const timing of timings) {
-            if(!timing.element) {
-              console.error(`No timing on: ${timing.element}`)
-            }
-            timing.endTime = endTime
+        const { timings = [] } = info
+        for(const timing of timings) {
+          if(!timing.element) {
+            console.error({
+              'No Element': timing.element,
+            })
           }
+          timing.endTime = endTime
         }
       }
     }
@@ -433,14 +446,30 @@ export class Slideshow {
     }
   }
 
-  addEvent(element, startTime, endTime) {
-    if(startTime >= endTime) {
-      console.error(
-        `Event ends at ${endTime} <= when it starts ${startTime}.`
+  addEvent(element, start, end, opts = { append: false }) {
+    start ??= element.start ?? element.startTime
+    end ??= element.end ?? element.endTime
+
+    if(start >= end) {
+      console.warn(
+        `Event ends @ ${end} <= when it starts @ ${start}.`
       )
+      ;[start, end] = [end, start]
     }
-    this.events.push(new DisplayEvent(element, startTime, endTime))
-    this.presentationTime = Math.max(presentationTime, endTime)
-    this.uiInterface = hideElement(element)
+
+    while(element.element) element = element.element
+    while(element.image) element = element.image
+
+    const event = new DisplayEvent({ element, start, end })
+
+    if(opts.append) this.events.push(event)
+
+    this.presentationTime = (
+      Math.max(this.presentationTime, end)
+    )
+
+    uiInterface.hideElement(element)
+
+    return event
   }
 }
