@@ -1,5 +1,5 @@
 import { addListener, createEvent } from './compatability.js'
-import { uiInterface as ui, debug } from './control.js'
+import { ui, debug, verbose } from './control.js'
 
 /**
  * Class used to hold the info about images in a custom layout
@@ -9,7 +9,7 @@ export class ImageInfo {
     this.image = image
     if(style) {
       this.style ??= []
-      const styleElements = style.trim().split(/\s+/)
+      const styleElements = style.trim().split(/\s*;\s*/)
       for(const styleElem of styleElements) {
         const [key, ...val] = styleElem.split(/\s*?:\s*/)
         this.style[key] = val
@@ -60,8 +60,8 @@ export class TimingInfo {
   }
 }
 
-export const ProxiedDisplayEvent = {
-  active: null,
+export class ProxiedDisplayEvent {
+  active = true
 
   get(source, prop) {
     switch(prop) {
@@ -77,15 +77,15 @@ export const ProxiedDisplayEvent = {
         return source[prop]
       }
     }
-  },
+  }
 
   set(source, prop, value) {
     switch(prop) {
       case 'active': {
         if(value && this.active === false) {
-          ui.showElement(this)
+          ui.showElement(source)
         } else if(!value && this.active === true) {
-          ui.hideElement(this)
+          ui.hideElement(source)
         }
         this.active = value
         break
@@ -98,28 +98,46 @@ export const ProxiedDisplayEvent = {
   }
 }
 
-export function EventsArray() {
-  Array.apply(this, arguments)
-}
-EventsArray.prototype = new Array()
+export class EventsArray extends Array {
+  constructor(...args) {
+    super(...args)
+  }
 
-/**
- * Last event starting at of before 'time'
- */
-// export function indexOfLastAt(time) {
-EventsArray.prototype.indexOfLastAt = function(time) {
-  if(this.length > 0) {
-    /* My binary version of this search was buggy so this is simple linear */
-    let index = 0
-    while(index < this.length && this[index].startTime <= time) {
-      index++
+  /**
+   * Last event starting at or before 'time'.
+   * Could be simplified since events are sorted by start time.
+   */
+  indexOfLastStartAt(time) {
+    return this.findLastIndex((event) => (
+      event.startTime <= time
+    ))
+  }
+
+  indexOfFirstStartAt(time) {
+    return this.findIndex((event) => (
+      event.startTime <= time
+      && (
+        event.endTime >= time
+        || event.duration >= time - event.startTime
+      )
+    ))
+  }
+
+  /**
+   * Events are sorted by start time, so iterate from
+   * the first element which starts to with a startTime
+   * <= time and an endTime >= time to the last event
+   * with a startTime at or before 'time'
+   */
+  covering(time) {
+    const index = {
+      start: this.indexOfFirstStartAt(time),
+      end: this.indexOfLastStartAt(time),
     }
-    /* The loop will overshoot by 1, so if it is 0, it didn't find any */
-    if(index === 0) {
-      return undefined
-    } else {
-      return --index
+    if(debug && verbose) {
+      console.debug({ time, 'Covering Range': index, Of: this })
     }
+    return this.slice(index.start, index.end + 1)
   }
 }
 
@@ -145,19 +163,18 @@ export class Slideshow {
   set currentTime(time) {
     for(const event of this.activeEvents) {
       event.active = (
-        event.startTime > time
-        || event.endTime <= time
+        event.startTime <= time
+        && event.endTime >= time
       )
     }
 
-    const index = this.stopIndex = (
-      this.events.indexOfLastAt(time)
-    )
-    if(index != null) {
-      for(const event of this.events.slice(0, index)) {
-        event.active = event.endTime > time
-      }
+    const range = this.events.covering(time)
+    console.debug({ range, time })
+    for(const event of range) {
+      event.active = event.endTime > time
+      console.debug({ time, event, active: event.active })
     }
+
     this.lastSeekTime = time
   }
 
@@ -191,14 +208,14 @@ export class Slideshow {
     const stopPoints = this.extractStopPoints(xmlDocument)
     const slides = await this.extractSlides(xmlDocument)
     this.loaded = true
-    const finishLayout = () => {
+    const finishLayout = async () => {
       if(debug) {
         console.debug({
           'Finishing': { slides, stopPoints },
         })
       }
 
-      this.layout(slides, stopPoints)
+      await this.layout(slides, stopPoints)
     }
     addListener(ui, 'load', finishLayout, false)
   }
@@ -207,7 +224,7 @@ export class Slideshow {
    * Does the final layout on the slides. This cannot be done
    * until all the html is loaded
    */
-  layout(slides, stopPoints) {
+  async layout(slides, stopPoints) {
     if(!ui.loaded) {
       throw new Error('UI not loaded in `layout`.')
     }
@@ -215,18 +232,12 @@ export class Slideshow {
       this.finishingLayout = true
       this.timeSlides(slides, stopPoints)
 
-      for(const slide of Array.from(slides)) {
-        this.events.push(...ui.layoutSlide(slide))
-      }
+      await Promise.all(Array.from(slides).map(
+        async (slide) => {
+          this.events.push(...ui.layoutSlide(slide))
+        }
+      ))
       this.events.sort((a, b) => (a.startTime - b.startTime))
-
-      if(debug) {
-        console.debug({
-          'Laying Out': {
-            events: this.events, slides, stopPoints,
-          },
-        })
-      }
 
       if(debug) {
         console.debug({ 'Slideshow Events': {
@@ -494,7 +505,7 @@ export class Slideshow {
     })
 
     const event = (
-      new Proxy(info, ProxiedDisplayEvent)
+      new Proxy(info, new ProxiedDisplayEvent())
     )
     event.active = false
 

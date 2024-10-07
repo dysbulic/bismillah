@@ -8,24 +8,35 @@ const hasParam = (name) => (
 )
 
 export const slideshow = new Slideshow()
-export let uiInterface
+export let ui
 export let audioPlayer
 export let slider
 export let timeout = 50 // timeout between updates in milliseconds
 export const debug = hasParam('debug')
 export const verbose = hasParam('verbose')
 
-export async function setup(slideshowConfig, containerName, sliderName, playerName) {
+export async function setup(
+  slideshowConfig, containerName, sliderName, playerName,
+) {
   slider = setupSlider(sliderName)
-  uiInterface = new UIInterface(setupContainer(containerName))
+  ui = new UIInterface(setupContainer(containerName))
   audioPlayer = setupPlayer(playerName)
   addListener(slideshow, 'configure', showConfigured, true)
 
   const config = await loadXMLDocument(slideshowConfig)
-  slideshow.load(config, uiInterface)
+  await slideshow.load(config, ui)
+
+  const audioSrc = document.createElement('source')
+  audioSrc.src = slideshow.backgroundMusic
+  audioPlayer.appendChild(audioSrc)
 }
 
 function showConfigured() {
+  if(debug) {
+    console.debug({
+      'Slideshow Configured': audioPlayer
+    })
+  }
   if(audioPlayer == null || audioPlayer.loaded) {
     resetShow()
   }
@@ -38,13 +49,13 @@ function songLoadedCallback(filename) {
 }
 
 function resetShow() {
-  uiInterface.container.appendChild(uiInterface.container.startLink)
+  ui.container.appendChild(ui.container.startLink)
   audioPlayer?.pause()
   slideshow.reset()
 }
 
 function startShow() {
-  const { startLink } = uiInterface.container
+  const { startLink } = ui.container
   if(nodeIsInDocument(startLink)) {
     startLink.parentNode.removeChild(startLink)
   }
@@ -70,10 +81,9 @@ function stopShow() {
   slideshow.stop()
 }
 
-const barStart = 0
-const barLength = 580
-
 function seekToTime(time) {
+  const barStart = 0
+  const barLength = slider.parentElement.clientHeight
   slideshow.currentTime = time
   const { presentationTime: total } = slideshow
   const barSize = barLength - slider.clientHeight / 2
@@ -122,15 +132,12 @@ function setupSlider(sliderName) {
   if(!slider) {
     throw new Error(`Slider "${sliderName}" not found.`)
   }
-  slider.style.position = 'absolute'
   addListener(slider, 'mousedown', sliderSelected, true)
   addListener(slider, 'click', sliderClicked, true)
   return slider
 }
 
-let startSelectedTime
 function sliderClicked(event) {
-  console.debug({ pl: slideshow.playing })
   if(!slideshow.playing) {
     startShow()
   } else {
@@ -144,14 +151,16 @@ function sliderSelected(event) {
   addListener(document, 'mouseup', sliderRelease, true)
 
   startSelectedTime = slideshow.currentTime
-  const link = uiInterface.container.startLink
+  const link = ui.container.startLink
   if(nodeIsInDocument(link.parentNode)) {
-    uiInterface.container.removeChild(link)
+    ui.container.removeChild(link)
   }
   stopShow()
 }
 
 function sliderDrag(event) {
+  const barStart = 0
+  const barLength = slider.parentElement.clientHeight
   const { presentationTime: total } = slideshow
   if(isNaN(total) || total < 0) {
     throw new Error(`Invalid \`presentationTime\`: ${total}`)
@@ -195,8 +204,8 @@ function sliderRelease() {
 
 function setupPlayer(playerName) {
   const player = document.getElementById(playerName)
-  player.addEventListener('timeupdate', (event) => {
-    slideshow.currentTime = event.timeStamp
+  player.addEventListener('timeupdate', () => {
+    slideshow.currentTime = player.currentTime * 1000
   })
   return player
 }

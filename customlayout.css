@@ -1,8 +1,18 @@
+.layout {
+  display: flex;
+  flex-grow: 1;
+}
+
+.layout .custom {
+  position: absolute;
+
+  img {
+    width: 100%;
+  }
+}
+
 .customlayout {
   position: relative;
-  width: 95%;
-  height: 560px;
-  clear: both;
 }
 
 .customelm {

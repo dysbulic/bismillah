@@ -29,10 +29,8 @@ export class UIInterface {
       this.imageLoaded(image)
     }
     const errorListener = () => {
-      this.imageError(this.error)
+      this.imageError(image)
     }
-    loadListener.image = errorListener.image = image
-    loadListener.ui = errorListener.ui = this
     addListener(image, 'load', loadListener, false)
     addListener(image, 'error', errorListener, false)
     this.incrementObjectCount()
@@ -141,7 +139,10 @@ export class UIInterface {
     if(element.image) element = element.image
 
     if(debug && verbose) {
-      console.debug({ Hiding: info })
+      console.debug({
+        'Hiding Element': element,
+        remove: this.removeElements,
+      })
     }
 
     if(this.removeElements) {
@@ -173,6 +174,13 @@ export class UIInterface {
   }
 
   showElement(info) {
+    if(debug && verbose) {
+      console.debug({
+        Showing: info.element,
+        remove: this.removeElements,
+      })
+    }
+
     if(this.removeElements) {
       if(!nodeIsInDocument(info.element)) {
         info.savedParent.appendChild(info.element)
@@ -194,7 +202,7 @@ export class UIInterface {
   decrementObjectCount() {
     this._unloadedObjects--
 
-    if(this._unloadedObjects === 0 && show.loaded) { // config is parsed
+    if(this._unloadedObjects === 0 && !show.loaded) { // config is parsed
       if(debug) {
         console.debug({ 'Load Check Satisfied': {
           count: this._unloadedObjects, loaded: show.loaded
@@ -212,6 +220,7 @@ export class UIInterface {
     if(this.container.classList.contains('loading')) {
       this.container.classList.remove('loading')
       clearNode(this.container)
+      this.container.classList.add('loaded')
     }
     let events = []
     if(slide.length > 0) {
@@ -324,9 +333,9 @@ export class UIInterface {
           index === 0 ? 'left' : 'right', 'column',
         ])
         if(index == 0) {
-          classList.push(`elm-${switchIndex}`)
+          classList.push(`elems-${switchIndex}`)
         } else {
-          classList.push(`elm-${slide.length - switchIndex}`)
+          classList.push(`elems-${slide.length - switchIndex}`)
         }
         col.classList.add(...classList)
         holder.appendChild(col)
