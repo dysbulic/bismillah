@@ -15,6 +15,14 @@ import { DocumentInfo } from './Slideshow.js'
 export class UIInterface {
   constructor(container) {
     this.container = container
+
+    this.startLink = document.createElement('aside')
+    this.startLink.id = 'start'
+    const link = document.createElement('button')
+    link.setAttribute('onclick', show.start)
+    link.appendChild(document.createTextNode('Start Slideshow'))
+    this.startLink.appendChild(link)
+
     container.classList.add('loading')
 
     this.removeElements = false; // either removeChild or set display='none' on hide

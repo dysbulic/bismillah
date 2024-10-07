@@ -143,6 +143,7 @@ export class EventsArray extends Array {
 
 export class Slideshow {
   constructor() {
+    this.listeners = {} // event listeners
     this.configured = false // if the slideshow is ready to start
     this.loaded = false     // if the data files have been loaded
     this.events = new EventsArray() // Needs prototype to work
@@ -169,11 +170,11 @@ export class Slideshow {
     }
 
     const range = this.events.covering(time)
-    console.debug({ range, time })
     for(const event of range) {
       event.active = event.endTime > time
-      console.debug({ time, event, active: event.active })
     }
+
+    this.dispatchEvent(new Event('timeupdate'))
 
     this.lastSeekTime = time
   }
@@ -181,6 +182,10 @@ export class Slideshow {
   start() {
     this.playing = true
     this.currentTime = 0
+  }
+
+  togglePlaying() {
+    this.playing = !this.playing
   }
 
   stop() {
@@ -193,6 +198,7 @@ export class Slideshow {
     this.activeEvents.forEach((evt) => (
       evt.active = false
     ))
+    this.dispatchEvent(new Event('reset'))
   }
 
   async load(
@@ -469,18 +475,18 @@ export class Slideshow {
   }
 
   addEventListener(type, listener, bubble) {
-    if(type !== 'configure') {
+    if(!['configure', 'timeupdate'].includes(type)) {
       throw new Error(`Unknown Event Type: "${type}".`)
     }
-    this.configureListeners ??= []
-    this.configureListeners.push(listener)
+    this.listeners[type] ??= []
+    this.listeners[type].push(listener)
   }
 
   dispatchEvent(event) {
-    if(event.type !== 'configure') {
+    if(!['configure', 'timeupdate'].includes(event.type)) {
       throw new Error(`Unknown Event Type: "${event.type}".`)
     }
-    for(const listener of this.configureListeners ?? []) {
+    for(const listener of this.listeners[event.type] ?? []) {
       listener.call(listener, event)
     }
   }

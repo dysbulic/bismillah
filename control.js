@@ -49,19 +49,19 @@ function songLoadedCallback(filename) {
 }
 
 function resetShow() {
-  ui.container.appendChild(ui.container.startLink)
+  ui.container.appendChild(ui.startLink)
   audioPlayer?.pause()
   slideshow.reset()
 }
 
 function startShow() {
-  const { startLink } = ui.container
+  const { startLink } = ui
   if(nodeIsInDocument(startLink)) {
     startLink.parentNode.removeChild(startLink)
   }
-  slideshow.start()
-  audioPlayer?.play()
+  slideshow.paused = false
   if(audioPlayer) {
+    audioPlayer.play()
     if(
       typeof(slideshow.currentTime) !== 'number'
       || isNaN(slideshow.currentTime)
@@ -70,7 +70,7 @@ function startShow() {
         'Slideshow Time': slideshow.currentTime,
       })
     } else {
-      audioPlayer.currentTime = slideshow.currentTime
+      audioPlayer.currentTime = slideshow.currentTime / 1000
     }
   }
   step()
@@ -118,12 +118,6 @@ function step() {
 function setupContainer(containerName) {
   const container = document.getElementById(containerName)
   if(!container) throw new Error('Container not found.')
-  container.startLink = document.createElement('aside')
-  container.startLink.id = 'start'
-  const link = document.createElement('button')
-  link.setAttribute('onclick', 'startShow()')
-  link.appendChild(document.createTextNode('Start Slideshow'))
-  container.startLink.appendChild(link)
   return container
 }
 
@@ -132,17 +126,18 @@ function setupSlider(sliderName) {
   if(!slider) {
     throw new Error(`Slider "${sliderName}" not found.`)
   }
+  addListener(slider.parentNode, 'click', slideClicked, true)
   addListener(slider, 'mousedown', sliderSelected, true)
   addListener(slider, 'click', sliderClicked, true)
   return slider
 }
 
-function sliderClicked(event) {
-  if(!slideshow.playing) {
-    startShow()
-  } else {
-    stopShow()
-  }
+function slideClicked(event) {
+  sliderMouseAt(event.clientY)
+}
+
+function sliderClicked() {
+  slideshow.togglePlaying()
 }
 
 function sliderSelected(event) {
@@ -150,15 +145,18 @@ function sliderSelected(event) {
   addListener(document, 'mousemove', sliderDrag, true)
   addListener(document, 'mouseup', sliderRelease, true)
 
-  startSelectedTime = slideshow.currentTime
-  const link = ui.container.startLink
-  if(nodeIsInDocument(link.parentNode)) {
-    ui.container.removeChild(link)
+  const { startLink } = ui
+  if(nodeIsInDocument(startLink)) {
+    ui.container.removeChild(startLink)
   }
   stopShow()
 }
 
 function sliderDrag(event) {
+  sliderMouseAt(event.clientY)
+}
+
+function sliderMouseAt(yPosition) {
   const barStart = 0
   const barLength = slider.parentElement.clientHeight
   const { presentationTime: total } = slideshow
@@ -167,7 +165,7 @@ function sliderDrag(event) {
   }
   const sliderSize = slider.offsetHeight
   const center = Math.round(sliderSize / 2)
-  const position = event.clientY - center
+  const position = yPosition - center
   if(
     position >= barStart // after the start
     && position <= barLength - sliderSize // before the end
@@ -178,7 +176,7 @@ function sliderDrag(event) {
     if(debug && verbose) {
       console.debug({
         'Seeking': {
-          time, total,
+          yPosition, time, total,
           slider: {
             click: event.clientY, size: sliderSize,
             center, position,
@@ -191,7 +189,7 @@ function sliderDrag(event) {
     }
     slideshow.currentTime = time
     if(audioPlayer) {
-      audioPlayer.currentTime = time
+      audioPlayer.currentTime = time / 1000
     }
   }
 }
